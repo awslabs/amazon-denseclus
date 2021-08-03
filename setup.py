@@ -11,7 +11,7 @@ setuptools.setup(
     description="Dense Clustering for Mixed Data Types",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/smart-patrol/denseclus",  # TODO: change to awslab repo url
+    url="https://github.com/awslabs/amazon-denseclus",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
