@@ -5,7 +5,7 @@ DenseClus is a Python module for clustering mixed type data using [UMAP](https:/
 ## Installation
 
 ```bash
-pip install -i https://test.pypi.org/simple/ Amazon-DenseClus==0.0.12
+pip install amazon-denseclus
 ```
 
 ## Usage
