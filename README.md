@@ -37,7 +37,7 @@ print(clf.score())
 
 ## Examples
 
-A hands-on example with an overview of how to use is currently available in the form of a [Jupyer notebook [here](/notebooks/DenseClus%20Example%20NB.ipynb).
+A hands-on example with an overview of how to use is currently available in the form of a [Jupyter Notebook](/notebooks/DenseClus%20Example%20NB.ipynb).
 
 ## References
 
