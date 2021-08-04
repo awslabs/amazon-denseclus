@@ -1,3 +1,4 @@
+[![build](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg)](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml)
 # Amazon DenseClus
 
 DenseClus is a Python module for clustering mixed type data using [UMAP](https://github.com/lmcinnes/umap) and [HDBSCAN](https://github.com/scikit-learn-contrib/hdbscan). Allowing for both categorical and numerical data, DenseClus makes it possible to incoproate all features in clustering.
