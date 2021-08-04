@@ -1,12 +1,13 @@
-[![build](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg)](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml)
 # Amazon DenseClus
+
+[![build](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg)](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Amazon-DenseClus) [![PyPI version](https://badge.fury.io/py/Amazon-DenseClus.svg)](https://badge.fury.io/py/Amazon-DenseClus) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/Amazon-DenseClus) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![PyPI - License](https://img.shields.io/pypi/l/Amazon-DenseClus)
 
 DenseClus is a Python module for clustering mixed type data using [UMAP](https://github.com/lmcinnes/umap) and [HDBSCAN](https://github.com/scikit-learn-contrib/hdbscan). Allowing for both categorical and numerical data, DenseClus makes it possible to incoproate all features in clustering.
 
 ## Installation
 
 ```bash
-pip install amazon-denseclus
+pip install Amazon-DenseClus
 ```
 
 ## Usage

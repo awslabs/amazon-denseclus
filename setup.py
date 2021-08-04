@@ -19,7 +19,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.7",
-    license_files=("LICENSE.txt",),
+    license_files=("LICENSE",),
     install_requires=[
         "umap_learn>=0.5.1",
         "numpy>=1.20.2",
