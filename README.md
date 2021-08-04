@@ -1,6 +1,15 @@
+
 # Amazon DenseClus
 
-[![build](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg)](https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Amazon-DenseClus) [![PyPI version](https://badge.fury.io/py/Amazon-DenseClus.svg)](https://badge.fury.io/py/Amazon-DenseClus) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/Amazon-DenseClus) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![PyPI - License](https://img.shields.io/pypi/l/Amazon-DenseClus) [![GitHub Super-Linter](https://github.com/awslabs/amazon-denseclus/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+<p align="left">
+<a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg"></a>
+<a href="https://badge.fury.io/py/Amazon-DenseClus"><img alt="PyPI version" src="https://badge.fury.io/py/Amazon-DenseClus.svg"></a>
+<a><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/Amazon-DenseClus"></a>
+<a><img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/Amazon-DenseClus"></a>
+<a><img alt="PyPI - License" src="https://img.shields.io/pypi/l/Amazon-DenseClus"></a>
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+<a href="https://github.com/marketplace/actions/super-linter"><img alt="Github Super-Linter" src="https://github.com/awslabs/amazon-denseclus/workflows/Lint%20Code%20Base/badge.svg"></a>
+</p>
 
 DenseClus is a Python module for clustering mixed type data using [UMAP](https://github.com/lmcinnes/umap) and [HDBSCAN](https://github.com/scikit-learn-contrib/hdbscan). Allowing for both categorical and numerical data, DenseClus makes it possible to incoproate all features in clustering.
 
@@ -28,7 +37,7 @@ print(clf.score())
 
 ## Examples
 
-A hands-on example with an overview of how to use is currently available in the form of a [Jupyer notebook](notebooks/DenseClus%20Example%20NB.ipynb).
+A hands-on example with an overview of how to use is currently available in the form of a [Jupyer notebook [here](/notebooks/DenseClus%20Example%20NB.ipynb).
 
 ## References
 
