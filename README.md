@@ -28,7 +28,7 @@ print(clf.score())
 
 ## Examples
 
-A hands-on example with an overview of how to use is currently available in the form of a Jupyer notebook [here](https://github.com/smart-patrol/denseclus/blob/main/notebooks/DenseClus%20Example%20NB.ipynb).
+A hands-on example with an overview of how to use is currently available in the form of a [Jupyer notebook](notebooks/DenseClus%20Example%20NB.ipynb).
 
 ## References
 
