@@ -25,7 +25,7 @@ DenseClus requires a Panda's dataframe as input with both numerical and categori
 All preprocessing and extraction are done under the hood, just call fit and then retrieve the clusters!
 
 ```python
-from denseclus.DenseClus import DenseClus
+from denseclus import DenseClus
 
 clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
