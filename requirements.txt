@@ -6,7 +6,7 @@
 #
 cython==0.29.23
     # via hdbscan
-hdbscan==0.8.27
+hdbscan==0.8.26
     # via DenseClus (setup.py)
 joblib==1.0.1
     # via
