@@ -101,6 +101,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             self.verbose = False
             # supress deprecation warnings
             # see: https://stackoverflow.com/questions/54379418
+            
             def noop(*args, **kargs):
                 pass
 
