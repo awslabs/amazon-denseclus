@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import warnings
 
 import hdbscan
 import numpy as np
@@ -10,10 +11,10 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from .utils import check_is_df, extract_categorical, extract_numerical
 
 logger = logging.getLogger("denseclus")
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.ERROR)
 sh = logging.StreamHandler()
 sh.setFormatter(
-    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"),
 )
 logger.addHandler(sh)
 
@@ -96,8 +97,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.setLevel(logging.DEBUG)
             self.verbose = True
         else:
-            logger.setLevel(logging.WARNING)
+            logger.setLevel(logging.ERROR)
             self.verbose = False
+            # supress deprecation warnings
+            # see: https://stackoverflow.com/questions/54379418
+            def noop(*args, **kargs):
+                pass
+            warnings.warn = noop
 
         if isinstance(random_state, int):
             np.random.seed(seed=random_state)
