@@ -103,6 +103,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             # see: https://stackoverflow.com/questions/54379418
             def noop(*args, **kargs):
                 pass
+
             warnings.warn = noop
 
         if isinstance(random_state, int):
