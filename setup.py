@@ -6,7 +6,7 @@ with open("README.md", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="Amazon DenseClus",
-    version="0.0.12",
+    version="0.0.19",
     author="Charles Frenzel",
     description="Dense Clustering for Mixed Data Types",
     long_description=long_description,
