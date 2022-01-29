@@ -207,12 +207,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     def _fit_hdbscan(self):
         if self.flat_clusters:
             
-            self.flat_model = flat.HDBSCAN_flat(X                      = self.mapper_.embedding_,
+            flat_model      = flat.HDBSCAN_flat(X                      = self.mapper_.embedding_,
                                             cluster_selection_method   = self.cluster_selection_method,
                                             n_clusters                 = self.flat_clusters,
                                             min_samples                = self.min_samples,
                                             metric                     = "euclidean")
-            self.hdbscan_   = flat.approximate_predict_flat(self.flat_model, self.mapper_.embedding_, self.flat_clusters)
+            
+            self.hdbscan_  = flat_model
         else:
             hdb = hdbscan.HDBSCAN(
                 min_samples=self.min_samples,
@@ -238,7 +239,4 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         -------
         labels : np.array([int])
         """
-        if self.flat_clusters:
-          return self.hdbscan_[0]
-        else:
-          return self.hdbscan_.labels_
+        return self.hdbscan_.labels_
