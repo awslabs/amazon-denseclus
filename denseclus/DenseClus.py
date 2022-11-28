@@ -69,6 +69,14 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 See:
                   https://umap-learn.readthedocs.io/en/latest/composing_models.html
 
+            prediction_data: bool, default=False
+                Whether to generate extra cached data for predicting labels or
+                membership vectors few new unseen points later. If you wish to
+                persist the clustering object for later re-use you probably want
+                to set this to True.
+                See:
+                 https://hdbscan.readthedocs.io/en/latest/soft_clustering.html
+
             verbose : bool, default=False
                 Level of verbosity to print when fitting and predicting.
                 Setting to False will only show Warnings that appear.
@@ -83,6 +91,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         n_components: int = None,
         cluster_selection_method: str = "eom",
         umap_combine_method: str = "intersection",
+        prediction_data: bool = False,
         verbose: bool = False,
         flat_clusters: int = None,
     ):
@@ -94,6 +103,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self.n_components = n_components
         self.cluster_selection_method = cluster_selection_method
         self.umap_combine_method = umap_combine_method
+        self.prediction_data = prediction_data
         self.flat_clusters       = flat_clusters
 
         if verbose:
@@ -219,6 +229,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 min_samples=self.min_samples,
                 min_cluster_size=self.min_cluster_size,
                 cluster_selection_method=self.cluster_selection_method,
+                prediction_data=self.prediction_data,
                 gen_min_span_tree=True,
                 metric="euclidean",
             ).fit(self.mapper_.embedding_)
