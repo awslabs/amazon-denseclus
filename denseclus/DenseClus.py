@@ -6,6 +6,7 @@ import hdbscan
 import numpy as np
 import pandas as pd
 import umap.umap_ as umap
+from hdbscan import flat
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 from .utils import check_is_df, extract_categorical, extract_numerical
@@ -92,6 +93,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         umap_combine_method: str = "intersection",
         prediction_data: bool = False,
         verbose: bool = False,
+        flat_clusters: int = None,
     ):
 
         self.random_state = random_state
@@ -102,6 +104,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self.cluster_selection_method = cluster_selection_method
         self.umap_combine_method = umap_combine_method
         self.prediction_data = prediction_data
+        self.flat_clusters       = flat_clusters
 
         if verbose:
             logger.setLevel(logging.DEBUG)
@@ -212,15 +215,25 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         return self
 
     def _fit_hdbscan(self):
-        hdb = hdbscan.HDBSCAN(
-            min_samples=self.min_samples,
-            min_cluster_size=self.min_cluster_size,
-            cluster_selection_method=self.cluster_selection_method,
-            prediction_data=self.prediction_data,
-            gen_min_span_tree=True,
-            metric="euclidean",
-        ).fit(self.mapper_.embedding_)
-        self.hdbscan_ = hdb
+        if self.flat_clusters:
+            
+            flat_model      = flat.HDBSCAN_flat(X                      = self.mapper_.embedding_,
+                                            cluster_selection_method   = self.cluster_selection_method,
+                                            n_clusters                 = self.flat_clusters,
+                                            min_samples                = self.min_samples,
+                                            metric                     = "euclidean")
+            
+            self.hdbscan_  = flat_model
+        else:
+            hdb = hdbscan.HDBSCAN(
+                min_samples=self.min_samples,
+                min_cluster_size=self.min_cluster_size,
+                cluster_selection_method=self.cluster_selection_method,
+                prediction_data=self.prediction_data,
+                gen_min_span_tree=True,
+                metric="euclidean",
+            ).fit(self.mapper_.embedding_)
+            self.hdbscan_ = hdb
         return self
 
     def score(self):

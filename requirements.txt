@@ -8,7 +8,7 @@ cython==0.29.23
     # via hdbscan
 hdbscan==0.8.27
     # via DenseClus (setup.py)
-joblib==1.0.1
+joblib==1.2.0
     # via
     #   hdbscan
     #   pynndescent
@@ -22,7 +22,7 @@ numba==0.53.1
     #   DenseClus (setup.py)
     #   pynndescent
     #   umap-learn
-numpy==1.21.0
+numpy==1.22.0
     # via
     #   DenseClus (setup.py)
     #   hdbscan
