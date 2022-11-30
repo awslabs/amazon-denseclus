@@ -3,7 +3,7 @@
 
 lint:
 	black denseclus tests setup.py --check
-	flake8 denseclus tests setup.py
+	flake8 denseclus tests setup.py --max-line-length=90
 
 test:
 	python -m pytest -ra

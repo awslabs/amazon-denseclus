@@ -3,6 +3,9 @@
 
 <p align="left">
 <a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg"></a>
+<a><img alt="total download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=total&units=international_system&left_color=black&right_color=green&left_text=Total Downloads"></a>
+<a><img alt="month download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=month&units=international_system&left_color=black&right_color=green&left_text=Monthly Downloads"></a>
+<a><img alt="weekly download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=week&units=international_system&left_color=black&right_color=green&left_text=Weekly Downloads"></a>
 <a href="https://badge.fury.io/py/Amazon-DenseClus"><img alt="PyPI version" src="https://badge.fury.io/py/Amazon-DenseClus.svg"></a>
 <a><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/Amazon-DenseClus"></a>
 <a><img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/Amazon-DenseClus"></a>
@@ -10,6 +13,8 @@
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 <a href="https://github.com/marketplace/actions/super-linter"><img alt="Github Super-Linter" src="https://github.com/awslabs/amazon-denseclus/workflows/Lint%20Code%20Base/badge.svg"></a>
 </p>
+
+
 
 DenseClus is a Python module for clustering mixed type data using [UMAP](https://github.com/lmcinnes/umap) and [HDBSCAN](https://github.com/scikit-learn-contrib/hdbscan). Allowing for both categorical and numerical data, DenseClus makes it possible to incorporate all features in clustering.
 

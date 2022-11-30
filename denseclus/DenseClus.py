@@ -28,11 +28,11 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     Parameters
     ----------
             random_state : int, default=None
-                 Random State for both UMAP and numpy.random.
-                 If set to None UMAP will run in Numba in multicore mode but
-                 results may vary between runs.
-                 Setting a seed may help to offset the stochastic nature of
-                 UMAP by setting it with fixed random seed.
+                Random State for both UMAP and numpy.random.
+                If set to None UMAP will run in Numba in multicore mode but
+                results may vary between runs.
+                Setting a seed may help to offset the stochastic nature of
+                UMAP by setting it with fixed random seed.
 
             n_neighbors : int, default=30
                 Level of neighbors for UMAP.
@@ -67,7 +67,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 The latter combines both the intersection and union of
                 the embeddings.
                 See:
-                  https://umap-learn.readthedocs.io/en/latest/composing_models.html
+                https://umap-learn.readthedocs.io/en/latest/composing_models.html
 
             prediction_data: bool, default=False
                 Whether to generate extra cached data for predicting labels or
@@ -75,7 +75,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 persist the clustering object for later re-use you probably want
                 to set this to True.
                 See:
-                 https://hdbscan.readthedocs.io/en/latest/soft_clustering.html
+                https://hdbscan.readthedocs.io/en/latest/soft_clustering.html
 
             verbose : bool, default=False
                 Level of verbosity to print when fitting and predicting.
@@ -104,7 +104,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self.cluster_selection_method = cluster_selection_method
         self.umap_combine_method = umap_combine_method
         self.prediction_data = prediction_data
-        self.flat_clusters       = flat_clusters
+        self.flat_clusters = flat_clusters
 
         if verbose:
             logger.setLevel(logging.DEBUG)
@@ -216,14 +216,16 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     def _fit_hdbscan(self):
         if self.flat_clusters:
-            
-            flat_model      = flat.HDBSCAN_flat(X                      = self.mapper_.embedding_,
-                                            cluster_selection_method   = self.cluster_selection_method,
-                                            n_clusters                 = self.flat_clusters,
-                                            min_samples                = self.min_samples,
-                                            metric                     = "euclidean")
-            
-            self.hdbscan_  = flat_model
+
+            flat_model = flat.HDBSCAN_flat(
+                X=self.mapper_.embedding_,
+                cluster_selection_method=self.cluster_selection_method,
+                n_clusters=self.flat_clusters,
+                min_samples=self.min_samples,
+                metric="euclidean",
+            )
+
+            self.hdbscan_ = flat_model
         else:
             hdb = hdbscan.HDBSCAN(
                 min_samples=self.min_samples,
