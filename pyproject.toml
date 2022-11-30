@@ -9,3 +9,6 @@ version_scheme = "no-guess-dev"
 
 [tool.black]
 line-length = 88
+
+[tool.mypy]
+no_implicit_optional = false
