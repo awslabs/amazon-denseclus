@@ -62,7 +62,6 @@ def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
     check_is_df(numerical)
 
     for names in numerical.columns.tolist():
-
         pt = PowerTransformer(copy=False)
         # TO DO: fix this warning message
         filterwarnings("ignore")

@@ -2,8 +2,9 @@
 .PHONY: coverage deps help lint publish push test tox
 
 lint:
-	black denseclus tests setup.py --check
-	flake8 denseclus tests setup.py --max-line-length=90
+	black denseclus tests setup.py
+	ruff denseclus tests setup.py --fix --preview
+	pylint denseclus tests setup.py
 
 test:
 	python -m pytest -ra
@@ -18,7 +19,7 @@ tox: tox
 
 install:
 	python -m pip install --upgrade pip
-	python -m pip install black coverage flake8 mypy pytest tox tox-gh-actions
+	python -m pip install black coverage ruff pylint mypy pytest tox tox-gh-actions
 	python -m pip install -e .
 
 install-dev: install

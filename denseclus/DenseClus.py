@@ -95,7 +95,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         verbose: bool = False,
         flat_clusters: int = None,
     ):
-
         self.random_state = random_state
         self.n_neighbors = n_neighbors
         self.min_samples = min_samples
@@ -188,7 +187,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         return self
 
     def _umap_embeddings(self):
-
         if self.umap_combine_method == "intersection":
             self.mapper_ = self.numerical_umap_ * self.categorical_umap_
 
@@ -205,9 +203,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_components=self.n_components,
                 min_dist=0.0,
             ).fit(self.numerical_)
-            self.mapper_ = intersection_mapper * (
-                self.numerical_umap_ + self.categorical_umap_
-            )
+            self.mapper_ = intersection_mapper * (self.numerical_umap_ + self.categorical_umap_)
 
         else:
             raise KeyError("Select valid  UMAP combine method")
@@ -216,7 +212,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     def _fit_hdbscan(self):
         if self.flat_clusters:
-
             flat_model = flat.HDBSCAN_flat(
                 X=self.mapper_.embedding_,
                 cluster_selection_method=self.cluster_selection_method,
