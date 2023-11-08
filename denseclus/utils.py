@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+"""
+Utility functions for making fits to UMAP
+"""
 from warnings import filterwarnings
 
 import numpy as np
@@ -20,7 +24,6 @@ def extract_categorical(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: binary dummy DataFrame of categorical features
     """
-    check_is_df(df)
 
     categorical = df.select_dtypes(exclude=["float", "int"])
     if categorical.shape[1] == 0:
@@ -40,7 +43,6 @@ def extract_numerical(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: normalized numerical DataFrame of numerical features
     """
-    check_is_df(df)
 
     numerical = df.select_dtypes(include=["float", "int"])
     if numerical.shape[1] == 0:
@@ -59,15 +61,10 @@ def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Normalized DataFrame of Numerical features
     """
 
-    check_is_df(numerical)
-
-    for names in numerical.columns.tolist():
-        pt = PowerTransformer(copy=False)
-        # TO DO: fix this warning message
-        filterwarnings("ignore")
-        numerical.loc[:, names] = pt.fit_transform(
-            np.array(numerical.loc[:, names]).reshape(-1, 1),
-        )
-        filterwarnings("default")
+    for name in numerical.columns.tolist():
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            pt = PowerTransformer(copy=False)
+            numerical[name] = pt.fit_transform(np.array(numerical[name]).reshape(-1, 1))
 
     return numerical

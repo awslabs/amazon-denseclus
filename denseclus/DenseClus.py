@@ -1,4 +1,30 @@
 #!/usr/bin/env python3
+
+"""
+This file contains the implementation of DenseClus.
+
+DenseClus provides a unified interface for clustering mixed data types.
+It supports various methods for combining the embeddings:
+    including 'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+
+Usage:
+    # Create a DenseClus object
+    dense_clus = DenseClus(
+        umap_combine_method="intersection_union_mapper",
+    )
+
+    # Fit the DenseClus object to your mixed data type dataframe
+    dense_clus.fit(df)
+
+    # Return the clusters from the dataframe
+    clusters = dense_clus.score()
+
+
+Authors: Charles Frenzel, Baichaun Sun
+Date: November 2023
+"""
+
+
 import logging
 import warnings
 
@@ -95,6 +121,20 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         verbose: bool = False,
         flat_clusters: int = None,
     ):
+        if not isinstance(n_neighbors, int) or n_neighbors <= 0:
+            raise ValueError("n_neighbors must be a positive integer")
+        if not isinstance(min_samples, int) or min_samples <= 0:
+            raise ValueError("min_samples must be a positive integer")
+        if not isinstance(min_cluster_size, int) or min_cluster_size <= 0:
+            raise ValueError("min_cluster_size must be a positive integer")
+        if umap_combine_method not in [
+            "intersection",
+            "union",
+            "contrast",
+            "intersection_union_mapper",
+        ]:
+            raise ValueError("umap_combine_method must be valid selection")
+
         self.random_state = random_state
         self.n_neighbors = n_neighbors
         self.min_samples = min_samples
@@ -111,9 +151,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         else:
             logger.setLevel(logging.ERROR)
             self.verbose = False
+
             # supress deprecation warnings
             # see: https://stackoverflow.com/questions/54379418
-
+            # pylint: disable=W0613
             def noop(*args, **kargs):
                 pass
 
@@ -128,7 +169,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         return str(self.__dict__)
 
     def fit(self, df: pd.DataFrame) -> None:
-        """Fit function for call UMAP and HDBSCAN
+        """Fits the UMAP and HDBSCAN models to the provided data.
 
         Parameters
         ----------
@@ -165,28 +206,67 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self._fit_hdbscan()
 
     def _fit_numerical(self):
-        numerical_umap = umap.UMAP(
-            metric="l2",
-            n_neighbors=self.n_neighbors,
-            n_components=self.n_components,
-            min_dist=0.0,
-            random_state=self.random_state,
-        ).fit(self.numerical_)
-        self.numerical_umap_ = numerical_umap
-        return self
+        """
+        Fit a UMAP based on numerical data
+
+        Returns:
+            self
+        """
+        try:
+            logger.info("Fitting UMAP for Numerical data")
+
+            numerical_umap = umap.UMAP(
+                metric="l2",
+                n_neighbors=self.n_neighbors,
+                n_components=self.n_components,
+                min_dist=0.0,
+                random_state=self.random_state,
+            ).fit(self.numerical_)
+
+            self.numerical_umap_ = numerical_umap
+            logger.info("Numerical UMAP fitted successfully")
+
+            return self
+
+        except Exception as e:
+            logger.error("Failed to fit numerical UMAP: %s", str(e))
+            raise
 
     def _fit_categorical(self):
-        categorical_umap = umap.UMAP(
-            metric="dice",
-            n_neighbors=self.n_neighbors,
-            n_components=self.n_components,
-            min_dist=0.0,
-            random_state=self.random_state,
-        ).fit(self.categorical_)
-        self.categorical_umap_ = categorical_umap
-        return self
+        """
+        Fit a UMAP based on categorical data
+
+        Returns:
+            self
+        """
+        try:
+            logger.info("Fitting UMAP for categorical data")
+
+            categorical_umap = umap.UMAP(
+                metric="dice",
+                n_neighbors=self.n_neighbors,
+                n_components=self.n_components,
+                min_dist=0.0,
+                random_state=self.random_state,
+            ).fit(self.categorical_)
+            self.categorical_umap_ = categorical_umap
+            logger.info("Categorical UMAP fitted successfully")
+            return self
+
+        except Exception as e:
+            logger.error("Failed to fit numerical UMAP: %s", str(e))
+            raise
 
     def _umap_embeddings(self):
+        """Combines the numerical and categorical UMAP embeddings based on the specified method.
+
+        Supported: 'intersection', 'union', 'contrast', and 'intersection_union_mapper'
+
+        Returns
+        -------
+            self
+        """
+        logger.info("Combining UMAP embeddings using method: %s", self.umap_combine_method)
         if self.umap_combine_method == "intersection":
             self.mapper_ = self.numerical_umap_ * self.categorical_umap_
 
@@ -206,13 +286,23 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             self.mapper_ = intersection_mapper * (self.numerical_umap_ + self.categorical_umap_)
 
         else:
-            raise KeyError("Select valid  UMAP combine method")
+            logger.error("Invalid UMAP combine method: %s", self.umap_combine_method)
+            raise ValueError("Select valid UMAP combine method")
 
         return self
 
     def _fit_hdbscan(self):
+        """Fits HDBSCAN to the combined embeddings.
+        Parameters
+        ----------
+            None : None
+        Returns
+        -------
+            self
+        """
         if self.flat_clusters:
-            flat_model = flat.HDBSCAN_flat(
+            logger.info("Fitting HDBSCAN with flat clusters")
+            flat_model_ = flat.HDBSCAN_flat(
                 X=self.mapper_.embedding_,
                 cluster_selection_method=self.cluster_selection_method,
                 n_clusters=self.flat_clusters,
@@ -220,9 +310,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 metric="euclidean",
             )
 
-            self.hdbscan_ = flat_model
+            self.hdbscan_ = flat_model_
         else:
-            hdb = hdbscan.HDBSCAN(
+            logger.info("Fitting HDBSCAN with default parameters")
+            hdb_ = hdbscan.HDBSCAN(
                 min_samples=self.min_samples,
                 min_cluster_size=self.min_cluster_size,
                 cluster_selection_method=self.cluster_selection_method,
@@ -230,7 +321,9 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 gen_min_span_tree=True,
                 metric="euclidean",
             ).fit(self.mapper_.embedding_)
-            self.hdbscan_ = hdb
+            self.hdbscan_ = hdb_
+
+        logger.info("HDBSCAN fit")
         return self
 
     def score(self):
