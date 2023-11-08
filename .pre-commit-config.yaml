@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -12,27 +12,27 @@ repos:
       - id: detect-aws-credentials
         args: [--allow-missing-credentials]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 23.11.0
     hooks:
       - id: black
         language_version: python3.11
         args: ["-l 100"]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.3
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.3.0
+    rev: v3.1.0
     hooks:
       - id: add-trailing-comma
         args: [--py36-plus]
   - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.2.0
+    rev: v2.5.0
     hooks:
       - id: setup-cfg-fmt
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.991
+    rev: v1.6.1
     hooks:
       - id: mypy
         exclude: ^testing/resources/
@@ -42,7 +42,7 @@ repos:
       - id: python-bandit-vulnerability-check
         args: [--skip, "B101", --recursive, denseclus]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.1.4
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
