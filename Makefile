@@ -1,38 +1,60 @@
-.DEFAULT_GOAL := help
-.PHONY: coverage deps help lint publish push test tox
+PYTHON := python
+PIP := $(PYTHON) -m pip
+PYTEST := $(PYTHON) -m pytest
+COVERAGE := $(PYTHON) -m coverage
+BLACK := black
+RUFF := ruff
+PYLINT := pylint
+TOX := $(PYTHON) -m tox
+SETUP := $(PYTHON) setup.py
+
+.PHONY: lint lint-notebokks test coverage tox install install-dev pypi clean help
 
 lint:
-	black denseclus tests setup.py
-	ruff denseclus tests setup.py --fix --preview
-	pylint denseclus
+	@echo "Running linting..."
+	@$(BLACK) denseclus tests setup.py
+	@$(RUFF) denseclus tests setup.py --fix --preview
+	@$(PYLINT) denseclus
+
+lint-notebooks:
+	@echo "Linting notebooks..."
+	@nbqa pylint notebooks/*.ipynb
+	@nbqa black notebooks/*.ipynb
 
 test:
-	python -m pytest -ra
+	@echo "Running tests..."
+	@$(PYTEST) -ra
 
-coverage:  ## Run tests with coverage
-	python -m coverage erase
-	python -m coverage run --include=denseclus/* -m pytest -ra
-	python -m coverage report -m
+coverage:
+	@echo "Running coverage..."
+	@$(COVERAGE) erase
+	@$(COVERAGE) run --include=denseclus/* -m pytest -ra
+	@$(COVERAGE) report -m
 
-tox: tox
-	python -m tox
+tox:
+	@echo "Running tox..."
+	@$(TOX)
 
 install:
-	python -m pip install --upgrade pip
-	python -m pip install -e .
+	@echo "Installing..."
+	@$(PIP) install --upgrade pip
+	@$(PIP) install -e .
 
 install-dev: install
-	python -m pip install -r requirements-dev.txt
+	@echo "Installing dev dependencies..."
+	@$(PIP) install -r requirements-dev.txt
 
 pypi:
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
-	twine upload dist/*
+	@echo "Uploading to PyPi..."
+	@$(SETUP) sdist
+	@$(SETUP) bdist_wheel --universal
+	@twine upload dist/*
 
 clean:
-	rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
+	@echo "Cleaning..."
+	@rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
 
-help: ## Show help message
+help:
 	@IFS=$$'\n' ; \
 	help_lines=(`fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##/:/'`); \
 	printf "%s\n\n" "Usage: make [task]"; \

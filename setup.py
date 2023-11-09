@@ -26,7 +26,7 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Development Status :: 3 - Alpha",
     ],
-    python_requires=">=3.11, <3.12",
+    python_requires=">=3.10, <3.12",
     license_files=("LICENSE",),
     install_requires=required,
     keywords="amazon dense clustering",

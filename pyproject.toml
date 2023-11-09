@@ -15,7 +15,7 @@ skip = '.git,*.yaml,*.ipynb'
 
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py310']
 required-version = '23.11.0'
 exclude = '''
 (

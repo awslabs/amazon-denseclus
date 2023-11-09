@@ -35,7 +35,7 @@ import umap.umap_ as umap
 from hdbscan import flat
 from sklearn.base import BaseEstimator, ClassifierMixin
 
-from .utils import check_is_df, extract_categorical, extract_numerical
+from .utils import extract_categorical, extract_numerical
 
 logger = logging.getLogger("denseclus")
 logger.setLevel(logging.ERROR)
@@ -84,7 +84,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
             cluster_selection_method: str, default=eom
                 The HDBSCAN selection method for how flat clusters are selected from
-                the cluster hiearchy. Defaults to EOM or Excess of Mass
+                the cluster hierarchy. Defaults to EOM or Excess of Mass
 
             umap_combine_method : str, default=intersection
                 Method by which to combine embeddings spaces.
@@ -98,7 +98,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             prediction_data: bool, default=False
                 Whether to generate extra cached data for predicting labels or
                 membership vectors few new unseen points later. If you wish to
-                persist the clustering object for later re-use you probably want
+                persist the clustering object for later reuse you probably want
                 to set this to True.
                 See:
                 https://hdbscan.readthedocs.io/en/latest/soft_clustering.html
@@ -106,20 +106,26 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             verbose : bool, default=False
                 Level of verbosity to print when fitting and predicting.
                 Setting to False will only show Warnings that appear.
+
+            flat_clusters: bool, default=False
+                Instead of determining cluster size based on density,
+                the algorithm will attempt to partition the data into the specified
+                number of clusters and the resulting clusters will have a fixed size.
+
     """
 
     def __init__(
         self,
-        random_state: int = None,
+        random_state: int = 42,
         n_neighbors: int = 30,
         min_samples: int = 15,
         min_cluster_size: int = 100,
-        n_components: int = None,
+        n_components: int = 5,
         cluster_selection_method: str = "eom",
         umap_combine_method: str = "intersection",
         prediction_data: bool = False,
         verbose: bool = False,
-        flat_clusters: int = None,
+        flat_clusters: bool = False,
     ):
         if not isinstance(n_neighbors, int) or n_neighbors <= 0:
             raise ValueError("n_neighbors must be a positive integer")
@@ -152,7 +158,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.setLevel(logging.ERROR)
             self.verbose = False
 
-            # supress deprecation warnings
+            # suppress deprecation warnings
             # see: https://stackoverflow.com/questions/54379418
             # pylint: disable=W0613
             def noop(*args, **kargs):
@@ -182,7 +188,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Fitted UMAPs and HDBSCAN
         """
 
-        check_is_df(df)
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("Requires DataFrame as input")
 
         if not isinstance(self.n_components, int):
             self.n_components = int(round(np.log(df.shape[1])))
@@ -293,6 +300,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     def _fit_hdbscan(self):
         """Fits HDBSCAN to the combined embeddings.
+
         Parameters
         ----------
             None : None
@@ -300,6 +308,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         -------
             self
         """
+        # create clusters of a fixed size
         if self.flat_clusters:
             logger.info("Fitting HDBSCAN with flat clusters")
             flat_model_ = flat.HDBSCAN_flat(
@@ -311,6 +320,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             )
 
             self.hdbscan_ = flat_model_
+        # or find the ideal number of clusters based on the density
         else:
             logger.info("Fitting HDBSCAN with default parameters")
             hdb_ = hdbscan.HDBSCAN(

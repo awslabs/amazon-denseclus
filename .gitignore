@@ -151,3 +151,4 @@ cover/
 .pytype/
 cython_debug/
 .idea/
+notes.MD

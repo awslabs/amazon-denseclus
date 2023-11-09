@@ -10,11 +10,6 @@ import pandas as pd
 from sklearn.preprocessing import PowerTransformer
 
 
-def check_is_df(df: pd.DataFrame) -> None:
-    if not isinstance(df, pd.DataFrame):
-        raise TypeError("Requires DataFrame as input")
-
-
 def extract_categorical(df: pd.DataFrame) -> pd.DataFrame:
     """Extracts categorical features into binary dummy dataframe
 
@@ -35,7 +30,7 @@ def extract_categorical(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def extract_numerical(df: pd.DataFrame) -> pd.DataFrame:
-    """Extracts numerical features into normailzed numeric only dataframe
+    """Extracts numerical features into normalized numeric only dataframe
 
     Parameters:
         df (pd.DataFrame): DataFrame with numerical and categorical features
