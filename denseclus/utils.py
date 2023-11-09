@@ -3,7 +3,7 @@
 """
 Utility functions for making fits to UMAP
 """
-from warnings import filterwarnings
+import warnings
 
 import numpy as np
 import pandas as pd

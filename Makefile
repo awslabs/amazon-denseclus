@@ -4,7 +4,7 @@
 lint:
 	black denseclus tests setup.py
 	ruff denseclus tests setup.py --fix --preview
-	pylint denseclus tests setup.py
+	pylint denseclus
 
 test:
 	python -m pytest -ra
@@ -19,16 +19,10 @@ tox: tox
 
 install:
 	python -m pip install --upgrade pip
-	python -m pip install black coverage ruff pylint mypy pytest tox tox-gh-actions
 	python -m pip install -e .
 
 install-dev: install
-	python -m pip install -e ".[dev]"
-	pre-commit install
-
-install-test: install
-	python -m pip install -e ".[test]"
-	python -m pip install -e ".[all]"
+	python -m pip install -r requirements-dev.txt
 
 pypi:
 	python setup.py sdist
