@@ -1,18 +1,9 @@
-name: build
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10]
+        python-version: ["3.9", "3.10"]
 
     env:
       USING_COVERAGE: "3.10"
