@@ -46,6 +46,13 @@ install:
 install-dev: install
 	@echo "Installing dev dependencies..."
 	@$(PIP) install -r requirements-dev.txt
+	@$(PIP) pip install -e ".[dev]"
+
+install-test: install
+	@echo "Installing test dependencies..."
+	@$(PIP) pip install -e ".[test]"
+	@$(PIP) pip install -e ".[all]"
+
 
 pypi:
 	@echo "Uploading to PyPi..."
@@ -56,6 +63,7 @@ pypi:
 clean:
 	@echo "Cleaning..."
 	@rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
+	@rm -rf .mypy_cache .ruff_cache .coverage build .tox
 
 help:
 	@IFS=$$'\n' ; \

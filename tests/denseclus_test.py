@@ -44,14 +44,17 @@ def test_repr(clf):
     assert str(type(clf.__repr__)) == "<class 'method'>"
 
 
-def test_fit_known_output(categorical_df, numerical_df):
+def test_fit_known_output(df):
     pass
-    # df_small = pd.concat([categorical_df, numerical_df])
-    # clf.fit(df_small)
-    # expected_output = ""
-    # assert np.allclose(clf.numerical_umap_.embedding_, expected_output)
+    df_small = df.head(100)
+    clf = DenseClus()
+    clf.fit(df_small)
+    scores = clf.score()
+    expected_output = np.array([-1] * 100)
+    assert len(clf.numerical_umap_.embedding_) == len(expected_output)
+    assert np.all(expected_output == scores)
 
 
 def test_fit_empty_df():
-    with pytest.raises(OverflowError):
+    with pytest.raises(ValueError):
         DenseClus().fit(pd.DataFrame())

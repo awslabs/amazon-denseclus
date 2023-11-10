@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.9, 3.10]
 
     env:
-      USING_COVERAGE: "3.8"
+      USING_COVERAGE: "3.10"
 
     steps:
       - name: Checkout sources
@@ -35,5 +35,3 @@ jobs:
       - name: Run lint
         run: |
           make lint
-
-#    - run: bash <(curl -s https://codecov.io/bash)

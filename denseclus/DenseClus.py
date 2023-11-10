@@ -169,7 +169,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         if isinstance(random_state, int):
             np.random.seed(seed=random_state)
         else:
-            logger.info("No random seed passed, running UMAP in Numba")
+            logger.info("No random seed passed, running UMAP in Numba, parallel")
 
     def __repr__(self):
         return str(self.__dict__)
@@ -228,6 +228,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_components=self.n_components,
                 min_dist=0.0,
                 random_state=self.random_state,
+                n_jobs=1 if self.random_state is not None else -1,
+                verbose=False,
             ).fit(self.numerical_)
 
             self.numerical_umap_ = numerical_umap
@@ -255,6 +257,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_components=self.n_components,
                 min_dist=0.0,
                 random_state=self.random_state,
+                n_jobs=1 if self.random_state is not None else -1,
+                verbose=False,
             ).fit(self.categorical_)
             self.categorical_umap_ = categorical_umap
             logger.info("Categorical UMAP fitted successfully")
@@ -289,6 +293,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_neighbors=self.n_neighbors,
                 n_components=self.n_components,
                 min_dist=0.0,
+                n_jobs=1 if self.random_state is not None else -1,
             ).fit(self.numerical_)
             self.mapper_ = intersection_mapper * (self.numerical_umap_ + self.categorical_umap_)
 
