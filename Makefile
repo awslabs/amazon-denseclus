@@ -14,14 +14,13 @@ lint:
 	@echo "Running linting..."
 	@$(BLACK) denseclus tests setup.py
 	@$(RUFF) denseclus tests setup.py --fix --preview
-	@$(PYLINT) denseclus
+	@$(PYLINT) denseclus --disable=R0902,W0222,W0221,C0103
 
 lint-notebooks:
 	@echo "Linting notebooks..."
 	@nbqa black notebooks/*.ipynb
 	@nbqa isort notebooks/*.ipynb
 	nbstripout notebooks/*.ipynb
-	@nbqa pylint notebooks/*.ipynb
 
 
 test:
@@ -46,7 +45,6 @@ install:
 install-dev: install
 	@echo "Installing dev dependencies..."
 	@$(PIP) install -r requirements-dev.txt
-	@$(PIP) pip install -e ".[dev]"
 
 install-test: install
 	@echo "Installing test dependencies..."

@@ -28,6 +28,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          make install-dev
           make install-test
       - name: Run tox
         run: |
@@ -35,3 +36,4 @@ jobs:
       - name: Run lint
         run: |
           make lint
+          make lint-notebooks

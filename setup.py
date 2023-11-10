@@ -1,11 +1,6 @@
 #!/usr/bin/env/python3
 import setuptools
-from denseclus import __version__ as current_version
-
 import os
-
-print(os.environ["PYTHONPATH"])
-
 
 with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -15,7 +10,7 @@ with open("requirements.txt") as f:
 
 setuptools.setup(
     name="Amazon DenseClus",
-    version=current_version,
+    version="0.1.0",
     author="Charles Frenzel & Baichuan Sun",
     description="Dense Clustering for Mixed Data Types",
     long_description=long_description,
