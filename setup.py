@@ -1,6 +1,5 @@
 #!/usr/bin/env/python3
 import setuptools
-import os
 
 with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()

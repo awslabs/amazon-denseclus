@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-import warnings
 from denseclus.utils import extract_categorical, extract_numerical, transform_numerics
 
 

@@ -24,21 +24,55 @@ DenseClus is a Python module for clustering mixed type data using [UMAP](https:/
 python3 -m pip install Amazon-DenseClus
 ```
 
-## Usage
+## Quick Start
 
 DenseClus requires a Panda's dataframe as input with both numerical and categorical columns.
 All preprocessing and extraction are done under the hood, just call fit and then retrieve the clusters!
 
 ```python
 from denseclus import DenseClus
+from denseclus.utils import make_dataframe
 
-clf = DenseClus(
-    umap_combine_method="intersection_union_mapper",
-)
+df = make_dataframe()
+
+clf = DenseClus()
 clf.fit(df)
 
 print(clf.score())
 ```
+
+## Usage
+
+For slower but more stable results select `intersection_union_mapper` to combine embedding layers via third UMAP.
+Be sure that random seeds are set too!
+
+```python
+clf = DenseClus(
+    umap_combine_method="intersection_union_mapper",
+)
+```
+
+For advanced users, it's possible to select more fine-grained control of the underlying algorithms by passing
+dictionaries into `DenseClus` class.
+
+For example:
+```python
+from denseclus import DenseClus
+from denseclus.utils import make_dataframe
+
+umap_params = {'categorical': {'n_neighbors': 15, 'min_dist': 0.1},
+              'numerical': {'n_neighbors': 20, 'min_dist': 0.1}}
+hdbscan_params = {'min_cluster_size': 10}
+
+df = make_dataframe()
+
+clf = DenseClus(umap_combine_method="union"
+              ,umap_params=umap_params
+              ,hdbscan_params=hdbscan_params)
+
+clf.fit(df)
+```
+
 
 ## Examples
 

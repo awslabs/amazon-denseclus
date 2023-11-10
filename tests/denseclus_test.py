@@ -2,24 +2,19 @@
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import make_blobs
-from sklearn.preprocessing import KBinsDiscretizer, StandardScaler
-import warnings
 from denseclus.DenseClus import DenseClus
 
 
-def test_fit_categorical(n_components, df):
-    clf = DenseClus(n_components=n_components)
-    clf.fit(df)
-    assert clf.categorical_umap_.embedding_.shape == (len(df), n_components)
+def test_fit_categorical(clf, df):
+    assert clf.categorical_umap_.embedding_.shape == (len(df), clf.categorical_umap_.n_components)
 
 
 def test_fit_numerical(clf, df):
-    assert clf.numerical_umap_.embedding_.shape == (len(df), clf.n_components)
+    assert clf.numerical_umap_.embedding_.shape == (len(df), clf.numerical_umap_.n_components)
 
 
 def test_umap_embeddings(clf, df):
-    assert clf.mapper_.embedding_.shape == (len(df), clf.n_components)
+    assert clf.mapper_.embedding_.shape == (len(df), clf.mapper_.n_components[-1])
 
 
 def test_hdbscan_labels(clf, df):
@@ -45,7 +40,6 @@ def test_repr(clf):
 
 
 def test_fit_known_output(df):
-    pass
     df_small = df.head(100)
     clf = DenseClus()
     clf.fit(df_small)

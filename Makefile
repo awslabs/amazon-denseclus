@@ -14,7 +14,7 @@ lint:
 	@echo "Running linting..."
 	@$(BLACK) denseclus tests setup.py
 	@$(RUFF) denseclus tests setup.py --fix --preview
-	@$(PYLINT) denseclus --disable=R0902,W0222,W0221,C0103
+	@$(PYLINT) denseclus --disable=R0902,W0222,W0221,C0103,W0632
 
 lint-notebooks:
 	@echo "Linting notebooks..."
@@ -62,6 +62,7 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
 	@rm -rf .mypy_cache .ruff_cache .coverage build .tox
+	coverage erase
 
 help:
 	@IFS=$$'\n' ; \

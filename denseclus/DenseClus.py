@@ -32,7 +32,6 @@ import hdbscan
 import numpy as np
 import pandas as pd
 import umap.umap_ as umap
-from hdbscan import flat
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 from .utils import extract_categorical, extract_numerical
@@ -60,32 +59,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Setting a seed may help to offset the stochastic nature of
                 UMAP by setting it with fixed random seed.
 
-            n_neighbors : int, default=30
-                Level of neighbors for UMAP.
-                Setting this higher will generate higher densities at the expense
-                of requiring more computational complexity.
-
-            min_samples : int, default=15
-                Samples used for HDBSCAN.
-                The larger this is set the more noise points get declared and the
-                more restricted clusters become to only dense areas.
-
-            min_cluster_size : int, default=100
-                Minimum Cluster size for HDBSCAN.
-                The minimum number of points from which a cluster needs to be
-                formed.
-
-            n_components : int, default=logarithm
-                Number of components for UMAP.
-                These are dimensions to reduce the data down to.
-                Ideally, this needs to be a value that preserves all the information
-                to form meaningful clusters. Default is the logarithm of total
-                number of features.
-
-            cluster_selection_method: str, default=eom
-                The HDBSCAN selection method for how flat clusters are selected from
-                the cluster hierarchy. Defaults to EOM or Excess of Mass
-
             umap_combine_method : str, default=intersection
                 Method by which to combine embeddings spaces.
                 Options include: intersection, union, contrast,
@@ -107,32 +80,37 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Level of verbosity to print when fitting and predicting.
                 Setting to False will only show Warnings that appear.
 
-            flat_clusters: bool, default=False
-                Instead of determining cluster size based on density,
-                the algorithm will attempt to partition the data into the specified
-                number of clusters and the resulting clusters will have a fixed size.
+            umap_params : dict, optional
+                A dictionary containing dictionaries: 'categorical', 'numerical' and 'combined' if
+                'intersection_union_mapper' is selected as the 'umap_combine_method'.
+                Each dictionary should contain parameters for the UMAP algorithm used to
+                fit the data.
+                If not provided, default UMAP parameters will be used.
 
+                Example:
+                umap_params = {
+                                'categorical': {'n_neighbors': 15, 'min_dist': 0.1},
+                                'numerical': {'n_neighbors': 20, 'min_dist': 0.2}
+                                'combined' : {'n_neighbors': 5, 'min_dist': 0.1}
+                            }
+
+            hdbscan_params : dict, optional
+                A dictionary containing parameters for the HDBSCAN algorithm.
+                If not provided, default HDBSCAN parameters will be used.
+
+                Example:
+                hdbscan_params = {'min_cluster_size': 10}
     """
 
     def __init__(
         self,
         random_state: int = 42,
-        n_neighbors: int = 30,
-        min_samples: int = 15,
-        min_cluster_size: int = 100,
-        n_components: int = 5,
-        cluster_selection_method: str = "eom",
         umap_combine_method: str = "intersection",
         prediction_data: bool = False,
         verbose: bool = False,
-        flat_clusters: bool = False,
+        umap_params=None,
+        hdbscan_params=None,
     ):
-        if not isinstance(n_neighbors, int) or n_neighbors <= 0:
-            raise ValueError("n_neighbors must be a positive integer")
-        if not isinstance(min_samples, int) or min_samples <= 0:
-            raise ValueError("min_samples must be a positive integer")
-        if not isinstance(min_cluster_size, int) or min_cluster_size <= 0:
-            raise ValueError("min_cluster_size must be a positive integer")
         if umap_combine_method not in [
             "intersection",
             "union",
@@ -142,14 +120,58 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             raise ValueError("umap_combine_method must be valid selection")
 
         self.random_state = random_state
-        self.n_neighbors = n_neighbors
-        self.min_samples = min_samples
-        self.min_cluster_size = min_cluster_size
-        self.n_components = n_components
-        self.cluster_selection_method = cluster_selection_method
         self.umap_combine_method = umap_combine_method
         self.prediction_data = prediction_data
-        self.flat_clusters = flat_clusters
+
+        # Default parameters
+        default_umap_params = {
+            "categorical": {
+                "metric": "dice",
+                "n_neighbors": 30,
+                "n_components": 5,
+                "min_dist": 0.0,
+            },
+            "numerical": {
+                "metric": "l2",
+                "n_neighbors": 30,
+                "n_components": 5,
+                "min_dist": 0.0,
+            },
+            "combined": {
+                "n_neighbors": 30,
+                "min_dist": 0.0,
+                "n_components": 5,
+            },
+        }
+
+        default_hdbscan_params = {
+            "min_cluster_size": 100,
+            "min_samples": 15,
+            "gen_min_span_tree": True,
+            "metric": "euclidean",
+        }
+
+        # self.umap_params = dict()
+        # if umap_params is None:
+        #     self.umap_params = default_umap_params
+        # else:
+        #     for key, new_params in umap_params.items():
+        #         self.umap_params[key] = default_umap_params | new_params
+        if umap_params is None:
+            self.umap_params = default_umap_params
+        else:
+            for key in umap_params:
+                if key in default_umap_params:
+                    default_umap_params[key].update(umap_params[key])  # type: ignore # noqa
+                else:
+                    raise ValueError(f"Invalid key '{key}' in umap_params")
+            self.umap_params = default_umap_params
+
+        if hdbscan_params is None:
+            self.hdbscan_params = default_hdbscan_params
+        else:
+            default_hdbscan_params.update(hdbscan_params)
+            self.hdbscan_params = default_hdbscan_params
 
         if verbose:
             logger.setLevel(logging.DEBUG)
@@ -191,9 +213,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         if not isinstance(df, pd.DataFrame):
             raise TypeError("Requires DataFrame as input")
 
-        if not isinstance(self.n_components, int):
-            self.n_components = int(round(np.log(df.shape[1])))
-
         logger.info("Extracting categorical features")
         self.categorical_ = extract_categorical(df)
 
@@ -223,13 +242,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.info("Fitting UMAP for Numerical data")
 
             numerical_umap = umap.UMAP(
-                metric="l2",
-                n_neighbors=self.n_neighbors,
-                n_components=self.n_components,
-                min_dist=0.0,
                 random_state=self.random_state,
                 n_jobs=1 if self.random_state is not None else -1,
                 verbose=False,
+                **self.umap_params["numerical"],
             ).fit(self.numerical_)
 
             self.numerical_umap_ = numerical_umap
@@ -252,13 +268,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.info("Fitting UMAP for categorical data")
 
             categorical_umap = umap.UMAP(
-                metric="dice",
-                n_neighbors=self.n_neighbors,
-                n_components=self.n_components,
-                min_dist=0.0,
                 random_state=self.random_state,
                 n_jobs=1 if self.random_state is not None else -1,
                 verbose=False,
+                **self.umap_params["categorical"],
             ).fit(self.categorical_)
             self.categorical_umap_ = categorical_umap
             logger.info("Categorical UMAP fitted successfully")
@@ -290,10 +303,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         elif self.umap_combine_method == "intersection_union_mapper":
             intersection_mapper = umap.UMAP(
                 random_state=self.random_state,
-                n_neighbors=self.n_neighbors,
-                n_components=self.n_components,
-                min_dist=0.0,
                 n_jobs=1 if self.random_state is not None else -1,
+                **self.umap_params["combined"],
             ).fit(self.numerical_)
             self.mapper_ = intersection_mapper * (self.numerical_umap_ + self.categorical_umap_)
 
@@ -313,30 +324,12 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         -------
             self
         """
-        # create clusters of a fixed size
-        if self.flat_clusters:
-            logger.info("Fitting HDBSCAN with flat clusters")
-            flat_model_ = flat.HDBSCAN_flat(
-                X=self.mapper_.embedding_,
-                cluster_selection_method=self.cluster_selection_method,
-                n_clusters=self.flat_clusters,
-                min_samples=self.min_samples,
-                metric="euclidean",
-            )
-
-            self.hdbscan_ = flat_model_
-        # or find the ideal number of clusters based on the density
-        else:
-            logger.info("Fitting HDBSCAN with default parameters")
-            hdb_ = hdbscan.HDBSCAN(
-                min_samples=self.min_samples,
-                min_cluster_size=self.min_cluster_size,
-                cluster_selection_method=self.cluster_selection_method,
-                prediction_data=self.prediction_data,
-                gen_min_span_tree=True,
-                metric="euclidean",
-            ).fit(self.mapper_.embedding_)
-            self.hdbscan_ = hdb_
+        logger.info("Fitting HDBSCAN with default parameters")
+        hdb_ = hdbscan.HDBSCAN(
+            prediction_data=self.prediction_data,
+            **self.hdbscan_params,
+        ).fit(self.mapper_.embedding_)
+        self.hdbscan_ = hdb_
 
         logger.info("HDBSCAN fit")
         return self
