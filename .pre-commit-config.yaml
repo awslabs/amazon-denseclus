@@ -55,3 +55,18 @@ repos:
         args: [--toml, pyproject.toml]
         additional_dependencies:
           - tomli
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: main
+    hooks:
+      - id: validate-pyproject
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.7.0
+    hooks:
+      - id: nbqa-pyupgrade
+        args: ["--py37-plus"]
+      - id: nbqa-isort
+        args: ["--float-to-top"]

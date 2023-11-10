@@ -2,6 +2,10 @@
 import setuptools
 from denseclus import __version__ as current_version
 
+import os
+
+print(os.environ["PYTHONPATH"])
+
 
 with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()

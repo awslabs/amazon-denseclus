@@ -8,7 +8,7 @@ PYLINT := pylint
 TOX := $(PYTHON) -m tox
 SETUP := $(PYTHON) setup.py
 
-.PHONY: lint lint-notebokks test coverage tox install install-dev pypi clean help
+.PHONY: lint lint-notebooks test coverage tox install install-dev pypi clean help
 
 lint:
 	@echo "Running linting..."
@@ -18,8 +18,11 @@ lint:
 
 lint-notebooks:
 	@echo "Linting notebooks..."
-	@nbqa pylint notebooks/*.ipynb
 	@nbqa black notebooks/*.ipynb
+	@nbqa isort notebooks/*.ipynb
+	nbstripout notebooks/*.ipynb
+	@nbqa pylint notebooks/*.ipynb
+
 
 test:
 	@echo "Running tests..."
