@@ -7,9 +7,8 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import PowerTransformer
 from sklearn.datasets import make_blobs
-from sklearn.preprocessing import KBinsDiscretizer, StandardScaler
+from sklearn.preprocessing import KBinsDiscretizer, PowerTransformer, StandardScaler
 
 
 def extract_categorical(df: pd.DataFrame) -> pd.DataFrame:
