@@ -28,6 +28,12 @@ jobs:
         run: |
           make install-dev
           make install-test
+
+      - name: Lint and Autoformat
+        run: |
+          make lint
+          make lint-notebooks
+
       - name: Run tox
         run: |
           make tox
