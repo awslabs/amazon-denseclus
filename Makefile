@@ -48,8 +48,8 @@ install-dev: install
 
 install-test: install
 	@echo "Installing test dependencies..."
-	@$(PIP) pip install -e ".[test]"
-	@$(PIP) pip install -e ".[all]"
+	@$(PIP) install -e ".[test]"
+	@$(PIP) install -e ".[all]"
 
 
 pypi:
