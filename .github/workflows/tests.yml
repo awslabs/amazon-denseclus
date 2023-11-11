@@ -1,8 +1,6 @@
 name: build
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -33,7 +31,3 @@ jobs:
       - name: Run tox
         run: |
           make tox
-      - name: Run lint
-        run: |
-          make lint
-          make lint-notebooks

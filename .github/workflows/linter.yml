@@ -15,7 +15,6 @@ name: Lint Code Base
 # Start the job on all push #
 #############################
 on:
-  push:
   pull_request:
     branches: [main]
 
@@ -43,14 +42,7 @@ jobs:
       # Autoformat and Fix code linting      #
       ########################################
       - name: Autoformat Code
-        run: make lint
-
-      ################################
-      # Run Linter against code base #
-      ################################
-      - name: Lint Code Base
-        uses: github/super-linter@v5
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          make install-dev
+          make install-test
+          make lint
