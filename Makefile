@@ -1,43 +1,70 @@
-.DEFAULT_GOAL := help
-.PHONY: coverage deps help lint publish push test tox
+PYTHON := python
+PIP := $(PYTHON) -m pip
+PYTEST := $(PYTHON) -m pytest
+COVERAGE := $(PYTHON) -m coverage
+BLACK := black
+RUFF := ruff
+PYLINT := pylint
+TOX := $(PYTHON) -m tox
+SETUP := $(PYTHON) setup.py
+
+.PHONY: lint lint-notebooks test coverage tox install install-dev pypi clean help
 
 lint:
-	black denseclus tests setup.py --check
-	flake8 denseclus tests setup.py --max-line-length=90
+	@echo "Running linting..."
+	@$(BLACK) denseclus tests setup.py
+	@$(RUFF) denseclus tests setup.py --fix --preview
+	@$(PYLINT) denseclus --disable=R0902,W0222,W0221,C0103,W0632
+
+lint-notebooks:
+	@echo "Linting notebooks..."
+	@nbqa black notebooks/*.ipynb
+	@nbqa isort notebooks/*.ipynb
+	nbstripout notebooks/*.ipynb
+
 
 test:
-	python -m pytest -ra
+	@echo "Running tests..."
+	@$(PYTEST) -ra
 
-coverage:  ## Run tests with coverage
-	python -m coverage erase
-	python -m coverage run --include=denseclus/* -m pytest -ra
-	python -m coverage report -m
+coverage:
+	@echo "Running coverage..."
+	@$(COVERAGE) erase
+	@$(COVERAGE) run --include=denseclus/* -m pytest -ra
+	@$(COVERAGE) report -m
 
-tox: tox
-	python -m tox
+tox:
+	@echo "Running tox..."
+	@$(TOX)
 
 install:
-	python -m pip install --upgrade pip
-	python -m pip install black coverage flake8 mypy pytest tox tox-gh-actions
-	python -m pip install -e .
+	@echo "Installing..."
+	@$(PIP) install --upgrade pip
+	@$(PIP) install -e .
 
 install-dev: install
-	python -m pip install -e ".[dev]"
-	pre-commit install
+	@echo "Installing dev dependencies..."
+	@$(PIP) install -r requirements-dev.txt
 
 install-test: install
-	python -m pip install -e ".[test]"
-	python -m pip install -e ".[all]"
+	@echo "Installing test dependencies..."
+	@$(PIP) install -e ".[test]"
+	@$(PIP) install -e ".[all]"
+
 
 pypi:
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
-	twine upload dist/*
+	@echo "Uploading to PyPi..."
+	@$(SETUP) sdist
+	@$(SETUP) bdist_wheel --universal
+	@twine upload dist/*
 
 clean:
-	rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
+	@echo "Cleaning..."
+	@rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
+	@rm -rf .mypy_cache .ruff_cache .coverage build .tox
+	coverage erase
 
-help: ## Show help message
+help:
 	@IFS=$$'\n' ; \
 	help_lines=(`fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##/:/'`); \
 	printf "%s\n\n" "Usage: make [task]"; \

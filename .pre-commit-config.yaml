@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -11,44 +11,62 @@ repos:
       - id: requirements-txt-fixer
       - id: detect-aws-credentials
         args: [--allow-missing-credentials]
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-  - repo: https://github.com/pycqa/flake8
-    rev: "6.0.0" # pick a git hash / tag to point to
-    hooks:
-      - id: flake8
-        args: [--max-line-length=90]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    # workaround for black
+    # see: https://github.com/psf/black/issues/2493#issuecomment-1081987650
+    rev: "refs/tags/23.11.0:refs/tags/23.11.0"
     hooks:
       - id: black
         language_version: python3
-        args: ["-l 88"]
+        args: ["-l 100"]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.3
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.3.0
+    rev: v3.1.0
     hooks:
       - id: add-trailing-comma
         args: [--py36-plus]
   - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.2.0
+    rev: v2.5.0
     hooks:
       - id: setup-cfg-fmt
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.991
+    rev: v1.6.1
     hooks:
       - id: mypy
         exclude: ^testing/resources/
-  - repo: https://github.com/timothycrosley/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
   - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
     rev: v1.0.6
     hooks:
       - id: python-bandit-vulnerability-check
         args: [--skip, "B101", --recursive, denseclus]
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.1.5
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        args: [--toml, pyproject.toml]
+        additional_dependencies:
+          - tomli
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: main
+    hooks:
+      - id: validate-pyproject
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.7.0
+    hooks:
+      - id: nbqa-pyupgrade
+        args: ["--py37-plus"]
+      - id: nbqa-isort
+        args: ["--float-to-top"]
