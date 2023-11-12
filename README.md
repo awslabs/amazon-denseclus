@@ -43,14 +43,15 @@ print(clf.score())
 
 ## Usage
 
-For slower but more stable results select `intersection_union_mapper` to combine embedding layers via third UMAP.
-Be sure that random seeds are set too!
+For a slower but more **stable** results select `intersection_union_mapper` to combine embedding layers via a third UMAP, which will provide equal weight to both numerics and categoriel columns. By default, you are setting the random seed which eliminates the ability for UMAP to run in parallel but will help circumevent some of [the randomness](https://umap-learn.readthedocs.io/en/latest/reproducibility.html) of the algorithm.
 
 ```python
 clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
 )
 ```
+
+### Advanced Usage
 
 For advanced users, it's possible to select more fine-grained control of the underlying algorithms by passing
 dictionaries into `DenseClus` class.
@@ -60,15 +61,18 @@ For example:
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
-umap_params = {'categorical': {'n_neighbors': 15, 'min_dist': 0.1},
-              'numerical': {'n_neighbors': 20, 'min_dist': 0.1}}
-hdbscan_params = {'min_cluster_size': 10}
+umap_params = {
+    "categorical": {"n_neighbors": 15, "min_dist": 0.1},
+    "numerical": {"n_neighbors": 20, "min_dist": 0.1},
+}
+hdbscan_params = {"min_cluster_size": 10}
 
 df = make_dataframe()
 
 clf = DenseClus(umap_combine_method="union"
-              ,umap_params=umap_params
-              ,hdbscan_params=hdbscan_params)
+             , umap_params=umap_params
+             , hdbscan_params=hdbscan_params
+             , random_state=None) # this will run in parallel
 
 clf.fit(df)
 ```
@@ -76,7 +80,24 @@ clf.fit(df)
 
 ## Examples
 
-A hands-on example with an overview of how to use is currently available in the form of a [Jupyter Notebook](/notebooks/DenseClus%20Example%20NB.ipynb).
+### Notebooks
+
+A hands-on example with an overview of how to use is currently available in the form of a [Example Jupyter Notebook](/notebooks/01_DenseClusExampleNB.ipynb).
+
+Should you need to tune HDBSCAN, here is an optional approach: [Tuning with HDBSCAN Notebook](/notebooks/02_TuningwithHDBSCAN.ipynb)
+
+Should you need to validate UMAP emeddings, there is an approach to do so in the [Validation for UMAP Notebook](/notebooks/03_ValidationForUMAP.ipynb)
+
+### Blogs
+
+
+[AWS Blog: Introducing DenseClus, an open source clustering package for mixed-type data](https://aws.amazon.com/blogs/opensource/introducing-denseclus-an-open-source-clustering-package-for-mixed-type-data/)
+
+[TDS Blog: How To Tune HDBSCAN](https://towardsdatascience.com/tuning-with-hdbscan-149865ac2970)
+
+[TDS Blog: On the Validation of UMAP](https://towardsdatascience.com/on-the-validating-umap-embeddings-2c8907588175)
+
+
 
 ## References
 

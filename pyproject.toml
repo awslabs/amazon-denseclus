@@ -41,7 +41,7 @@ target-version = "py311"
 fix = true
 unfixable = []
 select = ["E", "W"]
-ignore = ["E203", "E231", "E402", "E712", "F401"]
+ignore = ["E203", "E231", "E402", "E712", "F401","E501"]
 exclude = [
     '.git',
     '__pycache__',

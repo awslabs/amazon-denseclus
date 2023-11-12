@@ -52,21 +52,38 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     Parameters
     ----------
-            random_state : int, default=None
+            random_state : int, default=42
                 Random State for both UMAP and numpy.random.
                 If set to None UMAP will run in Numba in multicore mode but
                 results may vary between runs.
                 Setting a seed may help to offset the stochastic nature of
                 UMAP by setting it with fixed random seed.
 
-            umap_combine_method : str, default=intersection
+            umap_combine_method : str, default=contrast
                 Method by which to combine embeddings spaces.
                 Options include: intersection, union, contrast,
-                intersection_union_mapper
-                The latter combines both the intersection and union of
-                the embeddings.
-                See:
-                https://umap-learn.readthedocs.io/en/latest/composing_models.html
+                methods for combining the embeddings: including
+                'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+
+                'intersection' preserves the numerical embeddings more, focusing on the quantitative aspects of
+                the data. This method is particularly useful when the numerical data is of higher importance or
+                relevance to the clustering task.
+
+                'Union' preserves the categorical embeddings more, emphasizing the qualitative aspects of the
+                data. This method is ideal when the categorical data carries significant weight or importance in
+                the clustering task.
+
+                'Contrast' highlights the differences between the numerical and categorical embeddings, providing
+                a more balanced representation of both. This method is particularly useful when there are
+                significant differences between the numerical and categorical data, and both types of data are
+                equally important for the clustering task.
+
+                'Intersection_union_mapper' is a hybrid method that combines the strengths of both 'intersection'
+                and 'union'. It first applies the 'intersection' method to preserve the numerical embeddings, then
+                applies the 'union' method to preserve the categorical embeddings. This method is useful when both
+                numerical and categorical data are important, but one type of data is not necessarily more
+                important than the other.
+                See: https://umap-learn.readthedocs.io/en/latest/composing_models.html
 
             prediction_data: bool, default=False
                 Whether to generate extra cached data for predicting labels or
@@ -105,7 +122,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     def __init__(
         self,
         random_state: int = 42,
-        umap_combine_method: str = "intersection",
+        umap_combine_method: str = "contrast",
         prediction_data: bool = False,
         verbose: bool = False,
         umap_params=None,
