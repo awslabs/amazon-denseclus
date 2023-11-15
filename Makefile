@@ -20,7 +20,6 @@ lint-notebooks:
 	@echo "Linting notebooks..."
 	@nbqa black notebooks/*.ipynb
 	@nbqa isort notebooks/*.ipynb
-	nbstripout notebooks/*.ipynb
 
 
 test:

@@ -127,6 +127,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         verbose: bool = False,
         umap_params=None,
         hdbscan_params=None,
+        **kwargs,
     ):
         if umap_combine_method not in [
             "intersection",
@@ -210,6 +211,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         else:
             logger.info("No random seed passed, running UMAP in Numba, parallel")
 
+        self.kwargs = kwargs
+
     def __repr__(self):
         return str(self.__dict__)
 
@@ -231,10 +234,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             raise TypeError("Requires DataFrame as input")
 
         logger.info("Extracting categorical features")
-        self.categorical_ = extract_categorical(df)
+        self.categorical_ = extract_categorical(df, **self.kwargs)
 
         logger.info("Extracting numerical features")
-        self.numerical_ = extract_numerical(df)
+        self.numerical_ = extract_numerical(df, **self.kwargs)
 
         logger.info("Fitting categorical UMAP")
         self._fit_categorical()
