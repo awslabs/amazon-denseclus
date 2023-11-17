@@ -8,7 +8,7 @@ Date: November 2023
 from .DenseClus import DenseClus
 from .utils import extract_categorical, extract_numerical
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 if __name__ == "__main__":
     print(type(DenseClus), type(extract_categorical), type(extract_numerical))

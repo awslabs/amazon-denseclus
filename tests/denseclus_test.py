@@ -37,6 +37,7 @@ def test_denseclus_method(df):
 
 
 def test_repr(clf):
+    warnings.filterwarnings("ignore", category=UserWarning, module="umap.umap_")
     assert str(type(clf.__repr__)) == "<class 'method'>"
 
 
