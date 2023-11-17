@@ -62,6 +62,7 @@ clean:
 	@rm -rf **/.ipynb_checkpoints **/.pytest_cache **/__pycache__ **/**/__pycache__ .ipynb_checkpoints .pytest_cache
 	@rm -rf .mypy_cache .ruff_cache .coverage build .tox
 	coverage erase
+	@rm -rf dist
 
 help:
 	@IFS=$$'\n' ; \

@@ -8,7 +8,7 @@ with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 setuptools.setup(
-    name="Amazon DenseClus",
+    name="amazon_denseclus",
     version="0.1.1",
     author="Charles Frenzel & Baichuan Sun",
     description="Dense Clustering for Mixed Data Types",
@@ -20,7 +20,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Intended Audience :: Data Scientists",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Development Status :: 3 - Alpha",
     ],
