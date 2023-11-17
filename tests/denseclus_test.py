@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-
+import warnings
 from denseclus.DenseClus import DenseClus
 
 
@@ -41,6 +41,7 @@ def test_repr(clf):
 
 
 def test_fit_known_output(df):
+    warnings.filterwarnings("ignore", category=UserWarning, module="umap.umap_")
     df_small = df.head(100)
     clf = DenseClus()
     clf.fit(df_small)

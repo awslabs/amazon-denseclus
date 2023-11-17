@@ -169,26 +169,19 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             "metric": "euclidean",
         }
 
-        # self.umap_params = dict()
-        # if umap_params is None:
-        #     self.umap_params = default_umap_params
-        # else:
-        #     for key, new_params in umap_params.items():
-        #         self.umap_params[key] = default_umap_params | new_params
-        if umap_params is None:
-            self.umap_params = default_umap_params
-        else:
+        if umap_params:
             for key in umap_params:
                 if key in default_umap_params:
                     default_umap_params[key].update(umap_params[key])  # type: ignore # noqa
                 else:
                     raise ValueError(f"Invalid key '{key}' in umap_params")
             self.umap_params = default_umap_params
-
-        if hdbscan_params is None:
-            self.hdbscan_params = default_hdbscan_params
         else:
-            default_hdbscan_params.update(hdbscan_params)
+            self.umap_params = default_umap_params
+
+        if hdbscan_params:
+            self.hdbscan_params = hdbscan_params
+        else:
             self.hdbscan_params = default_hdbscan_params
 
         if verbose:
