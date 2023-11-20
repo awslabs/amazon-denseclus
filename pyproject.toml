@@ -84,10 +84,10 @@ exclude = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=term-missing"
+addopts = "--cov=denseclus --cov-report=term-missing"
 markers = [
-    "unit",
-    "integration"
+    "fast",
+    "slow"
 ]
 
 [tool.pytest]
@@ -95,6 +95,9 @@ doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS",
     "NUMBER",
+]
+filterwarnings = [
+   "ignore::UserWarning"
 ]
 
 [tool.pylint.'MESSAGES CONTROL']

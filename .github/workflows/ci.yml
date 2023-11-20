@@ -44,11 +44,11 @@ jobs:
         run: |
           make lint
           make lint-notebooks
-        continue-on-error: true
+        continue-on-error: false
 
-      - name: Run Tests with Tox
+      - name: Run Tests and Coverage
         run: |
-          make tox
+          make coverage
 
       # TO DO: Add codecov
       # - name: Upload coverage to Codecov

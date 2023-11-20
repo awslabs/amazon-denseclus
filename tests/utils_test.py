@@ -172,3 +172,13 @@ def test_extract_numerical_columns(df, numerical_df):
     # Test with DataFrame with no numeric columns
     with pytest.raises(ValueError):
         extract_numerical(pd.DataFrame({"col1": ["a", "b", "c"]}))
+
+
+def test_impute_categorical_strategy_error(categorical_df):
+    with pytest.raises(ValueError):
+        impute_categorical(categorical_df, strategy="median", fill_value="Error")
+
+
+def test_impute_numerical_strategy_error(numerical_df):
+    with pytest.raises(ValueError):
+        impute_numerical(numerical_df, strategy="constant")
