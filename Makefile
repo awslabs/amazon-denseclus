@@ -8,13 +8,15 @@ PYLINT := pylint
 TOX := $(PYTHON) -m tox
 SETUP := $(PYTHON) setup.py
 
+DIR := denseclus
+
 .PHONY: lint lint-notebooks test coverage tox install install-dev pypi clean help
 
 lint:
 	@echo "Running linting..."
-	@$(BLACK) denseclus tests setup.py
-	@$(RUFF) denseclus tests setup.py --fix --preview
-	@$(PYLINT) denseclus --disable=R0902,W0222,W0221,C0103,W0632
+	@$(BLACK) $(DIR) tests setup.py
+	@$(RUFF) $(DIR) tests setup.py --fix --preview
+	@$(PYLINT) $(DIR) --disable=R0902,W0222,W0221,C0103,W0632
 
 lint-notebooks:
 	@echo "Linting notebooks..."
@@ -29,7 +31,7 @@ test:
 coverage:
 	@echo "Running coverage..."
 	@$(COVERAGE) erase
-	@$(COVERAGE) run --include=denseclus/* -m pytest -ra
+	@$(COVERAGE) run --source=$(DIR) -m pytest -ra
 	@$(COVERAGE) report -m
 
 tox:

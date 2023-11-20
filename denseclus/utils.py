@@ -37,8 +37,6 @@ def extract_categorical(
         raise TypeError("Input should be a pandas DataFrame")
     if df.empty:
         raise ValueError("Input DataFrame should not be empty.")
-    if df.shape[1] < 1:
-        raise ValueError("Input DataFrame should have at least one column.")
 
     categorical = df.select_dtypes(exclude=["float", "int"])
 
@@ -128,8 +126,6 @@ def extract_numerical(df: pd.DataFrame, impute_strategy: str = "median", **kwarg
         raise TypeError("Input should be a pandas DataFrame")
     if df.empty:
         raise ValueError("Input DataFrame should not be empty.")
-    if df.shape[1] < 1:
-        raise ValueError("Input DataFrame should have at least one column.")
 
     numerical = df.select_dtypes(include=["float", "int"])
     if numerical.shape[1] == 0:

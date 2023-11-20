@@ -180,14 +180,14 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             self.umap_params = default_umap_params
 
         if hdbscan_params:
-            self.hdbscan_params = hdbscan_params
+            self.hdbscan_params = hdbscan_params  # pragma: no cover
         else:
             self.hdbscan_params = default_hdbscan_params
 
-        if verbose:
+        if verbose:  # pragma: no cover
             logger.setLevel(logging.DEBUG)
             self.verbose = True
-        else:
+        else:  # pragma: no cover
             logger.setLevel(logging.ERROR)
             self.verbose = False
 
@@ -201,13 +201,21 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
         if isinstance(random_state, int):
             np.random.seed(seed=random_state)
-        else:
+        else:  # pragma: no cover
             logger.info("No random seed passed, running UMAP in Numba, parallel")
 
         self.kwargs = kwargs
 
-    def __repr__(self):
-        return str(self.__dict__)
+    def __repr__(self):  # pragma: no cover
+        return f"""DenseClus(random_state={self.random_state}
+                            ,umap_combine_method={self.umap_combine_method}
+                            ,umap_params={self.umap_params}
+                            ,hdbscan_params={self.hdbscan_params})"""
+
+    def __str__(self):  # pragma: no cover
+        return f"""DenseClus object (random_state={self.random_state}
+                                    ,umap_combine_method={self.umap_combine_method}
+                                    ,verbose={self.verbose})"""
 
     def fit(self, df: pd.DataFrame) -> None:
         """Fits the UMAP and HDBSCAN models to the provided data.
