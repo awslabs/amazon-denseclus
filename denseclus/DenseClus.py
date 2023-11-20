@@ -209,7 +209,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     def __repr__(self):  # pragma: no cover
         return f"""DenseClus(random_state={self.random_state}
                             ,umap_combine_method={self.umap_combine_method}
-                            ,random_state={self.random_state}
                             ,umap_params={self.umap_params}
                             ,hdbscan_params={self.hdbscan_params})"""
 
