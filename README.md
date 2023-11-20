@@ -2,7 +2,7 @@
 # Amazon DenseClus
 
 <p align="left">
-<a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg"></a>
+<a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/cd.yml/badge.svg"></a>
 <a><img alt="total download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=total&units=international_system&left_color=black&right_color=green&left_text=Total Downloads"></a>
 <a><img alt="month download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=month&units=international_system&left_color=black&right_color=green&left_text=Monthly Downloads"></a>
 <a><img alt="weekly download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=week&units=international_system&left_color=black&right_color=green&left_text=Weekly Downloads"></a>
