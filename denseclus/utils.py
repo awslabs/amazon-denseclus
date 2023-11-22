@@ -8,10 +8,10 @@ from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.datasets import make_blobs
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import KBinsDiscretizer, PowerTransformer, StandardScaler
+from sklearn.datasets import make_classification
 
 
 def extract_categorical(
@@ -177,19 +177,28 @@ def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
     return numerical
 
 
-def make_dataframe(n_samples: int = 1000) -> pd.DataFrame:
+def make_dataframe(n_samples: int = 1000, random_state: int = 42) -> pd.DataFrame:
     """This will create dataframe for demonstration purposes.
 
     Returns:
         pd.DataFrame: dataframe of categorical and numerical data
     """
-    X, _ = make_blobs(n_samples=n_samples, n_features=8, random_state=10)  # ruff: noqa: W0632
+    X, _ = make_classification(
+        n_samples=n_samples,
+        n_features=10,
+        n_informative=8,
+        random_state=random_state,
+    )
     numerical = StandardScaler().fit_transform(X[:, :6])
-    categorical = KBinsDiscretizer(n_bins=3, encode="ordinal").fit_transform(X[:, 6:])
+    categorical = KBinsDiscretizer(n_bins=5, encode="ordinal").fit_transform(X[:, 6:])
     categorical = np.where(
         categorical == 1.0,
         "M",
-        np.where(categorical == 2.0, "H", "L"),
+        np.where(
+            categorical == 2.0,
+            "H",
+            np.where(categorical == 3.0, "MH", np.where(categorical == 4.0, "HL", "L")),
+        ),
     ).astype(str)
 
     numerical_columns = [f"num_{i}" for i in range(numerical.shape[1])]

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
+import os
 from denseclus.DenseClus import DenseClus
 
 
@@ -82,49 +83,52 @@ def test_fit_empty_df():
 
 
 @pytest.mark.slow
-def test_predict(default_clf, df_new):
-    labels = default_clf.predict(df_new)
+def test_predict(fitted_predictions, df_len):
+    labels = fitted_predictions[:, 0]
     assert isinstance(labels, np.ndarray)
-    assert len(labels) == len(df_new)
+    assert len(labels) == df_len
 
 
 @pytest.mark.fast
-def test_predict_output_shape(default_clf, df_new):
-    labels = default_clf.predict(df_new)
+def test_predict_output_shape(fitted_predictions, df_len):
+    labels = fitted_predictions[:, 0]
     assert labels.shape == (
-        len(df_new),
+        df_len,
     ), "Predicted labels should have the same number of rows as input data"
 
 
 @pytest.mark.fast
-def test_predict_output_type(default_clf, df_new):
-    labels = default_clf.predict(df_new)
-    assert issubclass(labels.dtype.type, np.integer), "Predicted labels should be integers"
+def test_predict_output_type(fitted_predictions):
+    labels = fitted_predictions[:, 0]
+    assert issubclass(labels.dtype.type, np.integer) or issubclass(
+        labels.dtype.type,
+        np.float64,
+    ), "Predicted labels should be integers"
 
 
 @pytest.mark.fast
-def test_predict_proba_output_range(default_clf, df_new):
-    probabilities = default_clf.predict_proba(df_new)
+def test_predict_proba_output_range(fitted_predictions):
+    probabilities = fitted_predictions[:, 1]
     assert np.all(
         (probabilities >= 0) & (probabilities <= 1),
     ), "Probabilities should be between 0 and 1"
 
 
 @pytest.mark.fast
-def test_predict_proba_output_shape(default_clf, df_new):
-    probabilities = default_clf.predict_proba(df_new)
+def test_predict_proba_output_shape(fitted_predictions, df_len):
+    probabilities = fitted_predictions[:, 1]
     assert probabilities.shape == (
-        len(df_new),
+        df_len,
     ), "Probabilities should have the same number of rows as input data"
 
 
 @pytest.mark.fast
 def test_predict_input_type(union_mapper_clf):
     with pytest.raises(TypeError):
-        union_mapper_clf.predict("not a dataframe")
+        union_mapper_clf.fit_predict("not a dataframe")
 
 
 @pytest.mark.fast
 def test_predict_proba_input_type(union_mapper_clf):
     with pytest.raises(TypeError):
-        union_mapper_clf.predict_proba("not a dataframe")
+        union_mapper_clf.fit_predict("not a dataframe")

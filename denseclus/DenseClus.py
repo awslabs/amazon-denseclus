@@ -44,10 +44,8 @@ sh.setFormatter(
 )
 logger.addHandler(sh)
 
-warnings.filterwarnings(
-    "ignore",
-    message="gradient function is not yet implemented for dice distance metric; inverse_transform will be unavailable",
-)
+# this suppresses the dice metric warning
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class DenseClus(BaseEstimator, ClassifierMixin):
@@ -273,7 +271,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
-    def _predict_base(self, df_new: pd.DataFrame):
+    def fit_predict(self, df_old: pd.DataFrame, df_new: pd.DataFrame) -> np.array:
         """
         Base method for prediction. Transforms the new data using the existing UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
 
@@ -289,14 +287,18 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         strengths : np.array
             The strengths of the predictions for each row in df_new.
         """
+        df_combined = pd.concat([df_old, df_new])
 
-        categorical_new = extract_categorical(df_new, **self.kwargs)
-        numerical_new = extract_numerical(df_new, **self.kwargs)
+        categorical_combined = extract_categorical(df_combined, **self.kwargs)
+        numerical_combined = extract_numerical(df_combined, **self.kwargs)
 
-        categorical_embedding = self.categorical_umap_.transform(categorical_new)
-        numerical_embedding = self.numerical_umap_.transform(numerical_new)
+        self.categorical_umap_.fit(categorical_combined)
+        self.numerical_umap_.fit(numerical_combined)
 
-        # Combine the categorical and numerical embeddings using the method
+        categorical_embedding = self.categorical_umap_.embedding_
+        numerical_embedding = self.numerical_umap_.embedding_
+
+        # Perform the operations on the new embeddings
         if self.umap_combine_method == "intersection":
             mapper_new = numerical_embedding * categorical_embedding
         elif self.umap_combine_method == "union":
@@ -310,51 +312,15 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_jobs=1 if self.random_state is not None else -1,
                 **self.umap_params["combined"],
             ).fit(numerical_embedding)
-            mapper_new = intersection_mapper * (numerical_embedding + categorical_embedding)
+            mapper_new = intersection_mapper.embedding_ * (
+                numerical_embedding + categorical_embedding
+            )
         else:
             raise ValueError("Select valid UMAP combine method")
 
-        labels, strengths = hdbscan.approximate_predict(self.hdbscan_, mapper_new)
+        labels, strengths = hdbscan.approximate_predict(self.hdbscan_, mapper_new[-len(df_new) :])
 
-        return labels, strengths
-
-    def predict(self, df_new: pd.DataFrame):
-        """
-        Predict the cluster labels for new data.
-
-        This method uses the base prediction method to get the labels and strengths, but only returns the labels.
-
-        Parameters
-        ----------
-        df_new : pd.DataFrame
-            The new data for which to predict cluster labels.
-
-        Returns
-        -------
-        labels : np.array
-            The predicted cluster labels for each row in df_new.
-        """
-        labels, _ = self._predict_base(df_new)
-        return labels
-
-    def predict_proba(self, df_new: pd.DataFrame):
-        """
-        Predict the probabilities of the cluster labels for new data.
-
-        This method uses the base prediction method to get the labels and strengths, but only returns the strengths as probabilities.
-
-        Parameters
-        ----------
-        df_new : pd.DataFrame
-            The new data for which to predict cluster probabilities.
-
-        Returns
-        -------
-        probabilities : np.array
-            The probabilities of the predicted cluster labels for each row in df_new.
-        """
-        _, strengths = self._predict_base(df_new)
-        return strengths
+        return np.stack((labels, strengths), axis=-1)
 
     def _fit_categorical(self):
         """

@@ -6,12 +6,18 @@
 import pandas as pd
 import numpy as np
 import pytest
-
 from denseclus.DenseClus import DenseClus
 from denseclus.utils import make_dataframe
 
 
 N_COMPONENTS = 3
+DF_LEN = 5
+
+
+@pytest.fixture(scope="module")
+def df_len():
+    """Length of new df for fit predict"""
+    return DF_LEN
 
 
 @pytest.fixture(scope="module")
@@ -26,6 +32,12 @@ def fitted_clf():
     df_small = make_dataframe(n_samples=100)
     clf.fit(df_small)
     return clf
+
+
+@pytest.fixture(scope="module")
+def fitted_predictions(default_clf, df, df_len):
+    preds = default_clf.fit_predict(df, df.tail(df_len))
+    return preds
 
 
 @pytest.fixture(scope="module")

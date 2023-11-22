@@ -33,14 +33,19 @@ All preprocessing and extraction are done under the hood, just call fit and then
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
-df = make_dataframe(50000)
-clf = DenseClus()
-clf.fit(df)
+RANDOM_STATE = 10
+
+df = make_dataframe(random_state=RANDOM_STATE)
+train = df.sample(frac=0.8, random_state=RANDOM_STATE)
+test = df.drop(train.index)
+clf = DenseClus(random_state=RANDOM_STATE)
+clf.fit(train)
 
 scores = clf.score()
-predictions = clf.predict(df.tail())
+print(scores[0:10])
 
-print(predictions[0:10])
+predictions = clf.predict(df.tail())
+print(predictions)
 ```
 
 ## Usage
