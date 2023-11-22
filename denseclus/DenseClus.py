@@ -273,12 +273,18 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     def fit_predict(self, df_old: pd.DataFrame, df_new: pd.DataFrame) -> np.array:
         """
-        Base method for prediction. Transforms the new data using the existing UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
+        Generate predictions on new data points.
+        Refits UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
+
 
         Parameters
         ----------
+        df_old : pd.DataFrame
+            The old data for which to generate predictions.
+            This should be a DataFrame with the same structure as the one used in the fit method.
         df_new : pd.DataFrame
-            The new data for which to predict cluster labels. This should be a DataFrame with the same structure as the one used in the fit method.
+            The new data for which to generate predictions.
+            This should be a DataFrame with the same structure as the one used in the fit method.
 
         Returns
         -------
