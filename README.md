@@ -33,6 +33,27 @@ All preprocessing and extraction are done under the hood, just call fit and then
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
+
+df = make_dataframe()
+clf = DenseClus(df)
+clf.fit(df)
+
+scores = clf.score()
+print(scores[0:10])
+```
+
+
+## Usage
+
+### Prediction
+
+DenseClus uses a `fit_predict` method with the original fitted dataframe and the new one.
+Results are return in 2d array with the first part being the labels and the second part the probabilities.
+
+```
+from denseclus import DenseClus
+from denseclus.utils import make_dataframe
+
 RANDOM_STATE = 10
 
 df = make_dataframe(random_state=RANDOM_STATE)
@@ -41,14 +62,12 @@ test = df.drop(train.index)
 clf = DenseClus(random_state=RANDOM_STATE)
 clf.fit(train)
 
-scores = clf.score()
-print(scores[0:10])
-
-predictions = clf.predict(df.tail())
-print(predictions)
+predictions = clf.fit_predict(train, test)
+print(predictions) # labels, probabilities
 ```
 
-## Usage
+
+### On Combination Method
 
 For a slower but more **stable** results select `intersection_union_mapper` to combine embedding layers via a third UMAP, which will provide equal weight to both numerics and categoriel columns. By default, you are setting the random seed which eliminates the ability for UMAP to run in parallel but will help circumevent some of [the randomness](https://umap-learn.readthedocs.io/en/latest/reproducibility.html) of the algorithm.
 
@@ -57,7 +76,6 @@ clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
 )
 ```
-**This method does not support prediction and you'll need to refit to the entire dataset.*
 
 
 ### Advanced Usage
