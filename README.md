@@ -33,12 +33,14 @@ All preprocessing and extraction are done under the hood, just call fit and then
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
-df = make_dataframe()
-
+df = make_dataframe(50000)
 clf = DenseClus()
 clf.fit(df)
 
-print(clf.score())
+scores = clf.score()
+predictions = clf.predict(df.tail())
+
+print(predictions[0:10])
 ```
 
 ## Usage
@@ -50,11 +52,13 @@ clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
 )
 ```
+**This method does not support prediction and you'll need to refit to the entire dataset.*
+
 
 ### Advanced Usage
 
 For advanced users, it's possible to select more fine-grained control of the underlying algorithms by passing
-dictionaries into `DenseClus` class.
+dictionaries into `DenseClus` class for either UMAP or HDBSCAN.
 
 For example:
 ```python

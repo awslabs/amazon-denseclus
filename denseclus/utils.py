@@ -177,13 +177,13 @@ def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
     return numerical
 
 
-def make_dataframe() -> pd.DataFrame:
+def make_dataframe(n_samples: int = 1000) -> pd.DataFrame:
     """This will create dataframe for demonstration purposes.
 
     Returns:
         pd.DataFrame: dataframe of categorical and numerical data
     """
-    X, _ = make_blobs(n_samples=1000, n_features=8, random_state=10)  # ruff: noqa: W0632
+    X, _ = make_blobs(n_samples=n_samples, n_features=8, random_state=10)  # ruff: noqa: W0632
     numerical = StandardScaler().fit_transform(X[:, :6])
     categorical = KBinsDiscretizer(n_bins=3, encode="ordinal").fit_transform(X[:, 6:])
     categorical = np.where(

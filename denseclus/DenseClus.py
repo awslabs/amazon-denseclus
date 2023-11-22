@@ -44,6 +44,11 @@ sh.setFormatter(
 )
 logger.addHandler(sh)
 
+warnings.filterwarnings(
+    "ignore",
+    message="gradient function is not yet implemented for dice distance metric; inverse_transform will be unavailable",
+)
+
 
 class DenseClus(BaseEstimator, ClassifierMixin):
     """DenseClus
@@ -59,7 +64,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Setting a seed may help to offset the stochastic nature of
                 UMAP by setting it with fixed random seed.
 
-            umap_combine_method : str, default=contrast
+            umap_combine_method : str, default=intersection
                 Method by which to combine embeddings spaces.
                 Options include: intersection, union, contrast,
                 methods for combining the embeddings: including
@@ -84,14 +89,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 numerical and categorical data are important, but one type of data is not necessarily more
                 important than the other.
                 See: https://umap-learn.readthedocs.io/en/latest/composing_models.html
-
-            prediction_data: bool, default=False
-                Whether to generate extra cached data for predicting labels or
-                membership vectors few new unseen points later. If you wish to
-                persist the clustering object for later reuse you probably want
-                to set this to True.
-                See:
-                https://hdbscan.readthedocs.io/en/latest/soft_clustering.html
 
             verbose : bool, default=False
                 Level of verbosity to print when fitting and predicting.
@@ -122,8 +119,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     def __init__(
         self,
         random_state: int = 42,
-        umap_combine_method: str = "contrast",
-        prediction_data: bool = False,
+        umap_combine_method: str = "intersection",
         verbose: bool = False,
         umap_params=None,
         hdbscan_params=None,
@@ -139,7 +135,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
         self.random_state = random_state
         self.umap_combine_method = umap_combine_method
-        self.prediction_data = prediction_data
 
         # Default parameters
         default_umap_params = {
@@ -278,6 +273,89 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
+    def _predict_base(self, df_new: pd.DataFrame):
+        """
+        Base method for prediction. Transforms the new data using the existing UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
+
+        Parameters
+        ----------
+        df_new : pd.DataFrame
+            The new data for which to predict cluster labels. This should be a DataFrame with the same structure as the one used in the fit method.
+
+        Returns
+        -------
+        labels : np.array
+            The predicted cluster labels for each row in df_new.
+        strengths : np.array
+            The strengths of the predictions for each row in df_new.
+        """
+
+        categorical_new = extract_categorical(df_new, **self.kwargs)
+        numerical_new = extract_numerical(df_new, **self.kwargs)
+
+        categorical_embedding = self.categorical_umap_.transform(categorical_new)
+        numerical_embedding = self.numerical_umap_.transform(numerical_new)
+
+        # Combine the categorical and numerical embeddings using the method
+        if self.umap_combine_method == "intersection":
+            mapper_new = numerical_embedding * categorical_embedding
+        elif self.umap_combine_method == "union":
+            mapper_new = numerical_embedding + categorical_embedding
+        elif self.umap_combine_method == "contrast":
+            mapper_new = numerical_embedding - categorical_embedding
+        elif self.umap_combine_method == "intersection_union_mapper":
+            logger.info("Refitting new UMAP for Intersection Mapper")
+            intersection_mapper = umap.UMAP(
+                random_state=self.random_state,
+                n_jobs=1 if self.random_state is not None else -1,
+                **self.umap_params["combined"],
+            ).fit(numerical_embedding)
+            mapper_new = intersection_mapper * (numerical_embedding + categorical_embedding)
+        else:
+            raise ValueError("Select valid UMAP combine method")
+
+        labels, strengths = hdbscan.approximate_predict(self.hdbscan_, mapper_new)
+
+        return labels, strengths
+
+    def predict(self, df_new: pd.DataFrame):
+        """
+        Predict the cluster labels for new data.
+
+        This method uses the base prediction method to get the labels and strengths, but only returns the labels.
+
+        Parameters
+        ----------
+        df_new : pd.DataFrame
+            The new data for which to predict cluster labels.
+
+        Returns
+        -------
+        labels : np.array
+            The predicted cluster labels for each row in df_new.
+        """
+        labels, _ = self._predict_base(df_new)
+        return labels
+
+    def predict_proba(self, df_new: pd.DataFrame):
+        """
+        Predict the probabilities of the cluster labels for new data.
+
+        This method uses the base prediction method to get the labels and strengths, but only returns the strengths as probabilities.
+
+        Parameters
+        ----------
+        df_new : pd.DataFrame
+            The new data for which to predict cluster probabilities.
+
+        Returns
+        -------
+        probabilities : np.array
+            The probabilities of the predicted cluster labels for each row in df_new.
+        """
+        _, strengths = self._predict_base(df_new)
+        return strengths
+
     def _fit_categorical(self):
         """
         Fit a UMAP based on categorical data
@@ -347,7 +425,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         """
         logger.info("Fitting HDBSCAN with default parameters")
         hdb_ = hdbscan.HDBSCAN(
-            prediction_data=self.prediction_data,
+            prediction_data=True,
             **self.hdbscan_params,
         ).fit(self.mapper_.embedding_)
         self.hdbscan_ = hdb_
