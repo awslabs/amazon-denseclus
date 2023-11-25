@@ -50,7 +50,7 @@ print(scores[0:10])
 DenseClus uses a `fit_predict` method with the original fitted dataframe and the new one.
 Results are return in 2d array with the first part being the labels and the second part the probabilities.
 
-```
+```python
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 

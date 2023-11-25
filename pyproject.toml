@@ -1,12 +1,9 @@
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-# See configuration details in https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
-
 
 [tool.codespell]
 check-filenames = true
@@ -19,7 +16,7 @@ target-version = ['py310']
 required-version = '23.11.0'
 exclude = '''
 (
-    asv_bench/env
+  asv_bench/env
   | \.egg
   | \.git
   | \.hg
@@ -43,30 +40,54 @@ unfixable = []
 select = ["E", "W"]
 ignore = ["E203", "E231", "E402", "E712", "F401","E501"]
 exclude = [
-    '.git',
-    '__pycache__',
-    '.*_cache',
-    'examples/',
-    '.tox',
-    'data/',
-    'notebooks/',
-    'docs/',
-    'models/',
-    'venv/',
-    '.venv/'
+  '.git',
+  '__pycache__',
+  '.*_cache',
+  'examples/',
+  '.tox',
+  'data/',
+  'notebooks/',
+  'docs/',
+  'models/',
+  'venv/',
+  '.venv/'
 ]
 
+[tool.ruff.lint]
+# Bugbear configs, see: https://docs.astral.sh/ruff/configuration/
+select = ["E4", "E7", "E9", "F", "B"]
+ignore = ["E501"]
+unfixable = ["B"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"**/{tests,docs,tools}/*" = ["E402"]
 
 
-[tool.ruff.flake8-annotations]
+[tool.ruff.format]
+# Black like formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.flake8]
+select = ["E", "W"]
+ignore = ["E203", "E231", "E402", "E712", "F401","E501"]
+plugins = ["flake8-bugbear", "mccabe"]
+
+[tool.isort]
+combine-as-imports = true
+
+[tool.autoflake]
+remove-all-unused-imports = true
+remove-unused-variables = true
+
+[tool.flake8-annotations]
 mypy-init-return = true
 
-
-[tool.ruff.pydocstyle]
+[tool.pydocstyle]
 convention = "google"
-
-[tool.ruff.isort]
-combine-as-imports = true
 
 [tool.bandit]
 skips = ["B404","B603", "B403"]
@@ -76,35 +97,35 @@ ignore_missing_imports = true
 show_error_codes = true
 files = "**/*.py"
 exclude = [
-    '^docs/.*',
-    '^build/.*',
-    '^venv/.*',
-    '^notebooks/.*',
-    '^src/my_nb_color.py',
+  '^docs/.*',
+  '^build/.*',
+  '^venv/.*',
+  '^notebooks/.*',
+  '^src/my_nb_color.py',
 ]
 
 [tool.pytest.ini_options]
 addopts = "--cov=denseclus --cov-report=term-missing"
 markers = [
-    "fast",
-    "slow"
+  "fast",
+  "slow"
 ]
 
 [tool.pytest]
 doctest_optionflags = [
-    "NORMALIZE_WHITESPACE",
-    "ELLIPSIS",
-    "NUMBER",
+  "NORMALIZE_WHITESPACE",
+  "ELLIPSIS",
+  "NUMBER",
 ]
 filterwarnings = [
-   "ignore::UserWarning"
+ "ignore::UserWarning"
 ]
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
-    "too-many-arguments",
-    "not-callable",
-    "W0201",
-    "C0301",
-    "R0913"
+  "too-many-arguments",
+  "not-callable",
+  "W0201",
+  "C0301",
+  "R0913"
 ]
