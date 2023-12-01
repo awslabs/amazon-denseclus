@@ -1,27 +1,25 @@
-#!/usr/bin/env python3
-
 """
 This file contains the implementation of DenseClus.
 
 DenseClus provides a unified interface for clustering mixed data types.
 It supports various methods for combining the embeddings:
-    including 'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+   including 'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+
+:Authors: Charles Frenzel, Baichaun Sun
+:Date: November 2023
 
 Usage:
-    # Create a DenseClus object
-    dense_clus = DenseClus(
-        umap_combine_method="intersection_union_mapper",
-    )
+   .. doctest::
+   # Create a DenseClus object
+   dense_clus = DenseClus(
+       umap_combine_method="intersection_union_mapper",
+   )
 
-    # Fit the DenseClus object to your mixed data type dataframe
-    dense_clus.fit(df)
+   # Fit the DenseClus object to your mixed data type dataframe
+   dense_clus.fit(df)
 
-    # Return the clusters from the dataframe
-    clusters = dense_clus.score()
-
-
-Authors: Charles Frenzel, Baichaun Sun
-Date: November 2023
+   # Return the clusters from the dataframe
+   clusters = dense_clus.score()
 """
 
 
@@ -33,7 +31,7 @@ import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
-
+from copy import deepcopy
 from .utils import extract_categorical, extract_numerical
 
 logger = logging.getLogger("denseclus")
@@ -49,69 +47,39 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class DenseClus(BaseEstimator, ClassifierMixin):
-    """DenseClus
+    """
+    DenseClus
 
     Creates UMAP embeddings and HDSCAN clusters from mixed data
 
-    Parameters
-    ----------
-            random_state : int, default=42
-                Random State for both UMAP and numpy.random.
-                If set to None UMAP will run in Numba in multicore mode but
-                results may vary between runs.
-                Setting a seed may help to offset the stochastic nature of
-                UMAP by setting it with fixed random seed.
+    :param random_state: Random State for both UMAP and numpy.random.
+    If set to None UMAP will run in Numba in multicore mode but
+    results may vary between runs.
+    Setting a seed may help to offset the stochastic nature of
+    UMAP by setting it with fixed random seed.
+    :type random_state: int, default=42
 
-            umap_combine_method : str, default=intersection
-                Method by which to combine embeddings spaces.
-                Options include: intersection, union, contrast,
-                methods for combining the embeddings: including
-                'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+    :param umap_combine_method: Method by which to combine embeddings spaces.
+    Options include: intersection, union, contrast,
+    methods for combining the embeddings: including
+    'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+    :type umap_combine_method: str, default=intersection
 
-                'intersection' preserves the numerical embeddings more, focusing on the quantitative aspects of
-                the data. This method is particularly useful when the numerical data is of higher importance or
-                relevance to the clustering task.
+    :param verbose: Level of verbosity to print when fitting and predicting.
+    Setting to False will only show Warnings that appear.
+    :type verbose: bool, default=False
 
-                'Union' preserves the categorical embeddings more, emphasizing the qualitative aspects of the
-                data. This method is ideal when the categorical data carries significant weight or importance in
-                the clustering task.
+    :param umap_params: A dictionary containing dictionaries: 'categorical', 'numerical' and 'combined' if
+    'intersection_union_mapper' is selected as the 'umap_combine_method'.
+    Each dictionary should contain parameters for the UMAP algorithm used to
+    fit the data.
+    If not provided, default UMAP parameters will be used.
+    :type umap_params: dict, optional
 
-                'Contrast' highlights the differences between the numerical and categorical embeddings, providing
-                a more balanced representation of both. This method is particularly useful when there are
-                significant differences between the numerical and categorical data, and both types of data are
-                equally important for the clustering task.
+    :param hdbscan_params: A dictionary containing parameters for the HDBSCAN algorithm.
+    If not provided, default HDBSCAN parameters will be used.
+    :type hdbscan_params: dict, optional
 
-                'Intersection_union_mapper' is a hybrid method that combines the strengths of both 'intersection'
-                and 'union'. It first applies the 'intersection' method to preserve the numerical embeddings, then
-                applies the 'union' method to preserve the categorical embeddings. This method is useful when both
-                numerical and categorical data are important, but one type of data is not necessarily more
-                important than the other.
-                See: https://umap-learn.readthedocs.io/en/latest/composing_models.html
-
-            verbose : bool, default=False
-                Level of verbosity to print when fitting and predicting.
-                Setting to False will only show Warnings that appear.
-
-            umap_params : dict, optional
-                A dictionary containing dictionaries: 'categorical', 'numerical' and 'combined' if
-                'intersection_union_mapper' is selected as the 'umap_combine_method'.
-                Each dictionary should contain parameters for the UMAP algorithm used to
-                fit the data.
-                If not provided, default UMAP parameters will be used.
-
-                Example:
-                umap_params = {
-                                'categorical': {'n_neighbors': 15, 'min_dist': 0.1},
-                                'numerical': {'n_neighbors': 20, 'min_dist': 0.2}
-                                'combined' : {'n_neighbors': 5, 'min_dist': 0.1}
-                            }
-
-            hdbscan_params : dict, optional
-                A dictionary containing parameters for the HDBSCAN algorithm.
-                If not provided, default HDBSCAN parameters will be used.
-
-                Example:
-                hdbscan_params = {'min_cluster_size': 10}
     """
 
     def __init__(
@@ -211,17 +179,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                                     ,verbose={self.verbose})"""
 
     def fit(self, df: pd.DataFrame) -> None:
-        """Fits the UMAP and HDBSCAN models to the provided data.
+        """
+        Fits the UMAP and HDBSCAN models to the provided data.
 
-        Parameters
-        ----------
-            df : pandas DataFrame
-                DataFrame object with named columns of categorical and numerics
-
-        Returns
-        -------
-            Fitted: None
-                Fitted UMAPs and HDBSCAN
+        :param df: DataFrame object with named columns of categorical and numerics
+        :type df: pandas DataFrame
+        :return: Fitted UMAPs and HDBSCAN
+        :rtype: None
         """
 
         if not isinstance(df, pd.DataFrame):
@@ -240,17 +204,17 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self._fit_numerical()
 
         logger.info("Mapping/Combining Embeddings")
-        self._umap_embeddings()
+        self.mapper_ = self._umap_embeddings()
 
         logger.info("Fitting HDBSCAN...")
         self._fit_hdbscan()
 
-    def _fit_numerical(self):
+    def _fit_numerical(self) -> None:
         """
-        Fit a UMAP based on numerical data
+        Fits UMAP based on numerical data
 
-        Returns:
-            self
+        :return: fitted numerical umap
+        :rtype: None
         """
         try:
             logger.info("Fitting UMAP for Numerical data")
@@ -260,12 +224,11 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 n_jobs=1 if self.random_state is not None else -1,
                 verbose=False,
                 **self.umap_params["numerical"],
+                low_memory=False,
             ).fit(self.numerical_)
 
             self.numerical_umap_ = numerical_umap
             logger.info("Numerical UMAP fitted successfully")
-
-            return self
 
         except Exception as e:
             logger.error("Failed to fit numerical UMAP: %s", str(e))
@@ -276,64 +239,40 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         Generate predictions on new data points.
         Refits UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
 
-
-        Parameters
-        ----------
-        df_old : pd.DataFrame
-            The old data for which to generate predictions.
-            This should be a DataFrame with the same structure as the one used in the fit method.
-        df_new : pd.DataFrame
-            The new data for which to generate predictions.
-            This should be a DataFrame with the same structure as the one used in the fit method.
-
-        Returns
-        -------
-        labels : np.array
-            The predicted cluster labels for each row in df_new.
-        strengths : np.array
-            The strengths of the predictions for each row in df_new.
+        :param df_old: The old data for which to generate predictions. This should be a DataFrame with the same structure as the one used in the fit method.
+        :type df_old: pd.DataFrame
+        :param df_new: The new data for which to generate predictions. This should be a DataFrame with the same structure as the one used in the fit method.
+        :type df_new: pd.DataFrame
+        :return: The predicted cluster labels for each row in df_new.
+        :rtype: np.array
+        :return: The strengths of the predictions for each row in df_new.
+        :rtype: np.array
         """
+        df_old_len = len(df_old)
         df_combined = pd.concat([df_old, df_new])
 
-        categorical_combined = extract_categorical(df_combined, **self.kwargs)
-        numerical_combined = extract_numerical(df_combined, **self.kwargs)
+        categorical_combined = deepcopy(extract_categorical(df_combined, **self.kwargs))
+        numerical_combined = deepcopy(extract_numerical(df_combined, **self.kwargs))
 
-        self.categorical_umap_.fit(categorical_combined)
-        self.numerical_umap_.fit(numerical_combined)
-
-        categorical_embedding = self.categorical_umap_.embedding_
-        numerical_embedding = self.numerical_umap_.embedding_
+        self.categorical_umap_ = deepcopy(self.categorical_umap_.fit(categorical_combined))  # type: ignore
+        self.numerical_umap_ = deepcopy(self.numerical_umap_.fit(numerical_combined))
 
         # Perform the operations on the new embeddings
-        if self.umap_combine_method == "intersection":
-            mapper_new = numerical_embedding * categorical_embedding
-        elif self.umap_combine_method == "union":
-            mapper_new = numerical_embedding + categorical_embedding
-        elif self.umap_combine_method == "contrast":
-            mapper_new = numerical_embedding - categorical_embedding
-        elif self.umap_combine_method == "intersection_union_mapper":
-            logger.info("Refitting new UMAP for Intersection Mapper")
-            intersection_mapper = umap.UMAP(
-                random_state=self.random_state,
-                n_jobs=1 if self.random_state is not None else -1,
-                **self.umap_params["combined"],
-            ).fit(numerical_embedding)
-            mapper_new = intersection_mapper.embedding_ * (
-                numerical_embedding + categorical_embedding
-            )
-        else:
-            raise ValueError("Select valid UMAP combine method")
+        mapper = self._umap_embeddings()
 
-        labels, strengths = hdbscan.approximate_predict(self.hdbscan_, mapper_new[-len(df_new) :])
+        labels, strengths = hdbscan.approximate_predict(
+            self.hdbscan_,
+            mapper.embedding_[df_old_len:, :],
+        )
 
         return np.stack((labels, strengths), axis=-1)
 
-    def _fit_categorical(self):
+    def _fit_categorical(self) -> None:
         """
         Fit a UMAP based on categorical data
 
-        Returns:
-            self
+        :return: fitted categorical umap
+        :rtype: None
         """
         try:
             logger.info("Fitting UMAP for categorical data")
@@ -342,58 +281,55 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 random_state=self.random_state,
                 n_jobs=1 if self.random_state is not None else -1,
                 verbose=False,
+                low_memory=False,
                 **self.umap_params["categorical"],
             ).fit(self.categorical_)
             self.categorical_umap_ = categorical_umap
             logger.info("Categorical UMAP fitted successfully")
-            return self
 
         except Exception as e:
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
-    def _umap_embeddings(self):
+    def _umap_embeddings(self) -> "umap":
         """Combines the numerical and categorical UMAP embeddings based on the specified method.
 
         Supported: 'intersection', 'union', 'contrast', and 'intersection_union_mapper'
 
-        Returns
-        -------
-            self
+        :return: the combined UMAPs
+        :rtype: UMAP
         """
         logger.info("Combining UMAP embeddings using method: %s", self.umap_combine_method)
         if self.umap_combine_method == "intersection":
-            self.mapper_ = self.numerical_umap_ * self.categorical_umap_
+            mapper = deepcopy(self.numerical_umap_ * self.categorical_umap_)
 
         elif self.umap_combine_method == "union":
-            self.mapper_ = self.numerical_umap_ + self.categorical_umap_
+            mapper = deepcopy(self.numerical_umap_ + self.categorical_umap_)
 
         elif self.umap_combine_method == "contrast":
-            self.mapper_ = self.numerical_umap_ - self.categorical_umap_
+            mapper = deepcopy(self.numerical_umap_ - self.categorical_umap_)
 
         elif self.umap_combine_method == "intersection_union_mapper":
             intersection_mapper = umap.UMAP(
                 random_state=self.random_state,
                 n_jobs=1 if self.random_state is not None else -1,
+                low_memory=False,
                 **self.umap_params["combined"],
             ).fit(self.numerical_)
-            self.mapper_ = intersection_mapper * (self.numerical_umap_ + self.categorical_umap_)
+            mapper = deepcopy(intersection_mapper * (self.numerical_umap_ + self.categorical_umap_))
 
         else:
             logger.error("Invalid UMAP combine method: %s", self.umap_combine_method)
             raise ValueError("Select valid UMAP combine method")
 
-        return self
+        return mapper
 
-    def _fit_hdbscan(self):
-        """Fits HDBSCAN to the combined embeddings.
+    def _fit_hdbscan(self) -> None:
+        """
+        Fits HDBSCAN to the combined embeddings.
 
-        Parameters
-        ----------
-            None : None
-        Returns
-        -------
-            self
+        :return: fitted hdbscan
+        :rtype: None
         """
         logger.info("Fitting HDBSCAN with default parameters")
         hdb_ = hdbscan.HDBSCAN(
@@ -403,20 +339,15 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self.hdbscan_ = hdb_
 
         logger.info("HDBSCAN fit")
-        return self
 
-    def score(self):
-        """Returns the cluster assigned to each row.
+    def score(self) -> np.array:
+        """
+        Returns the cluster assigned to each row.
 
         This is wrapper function for HDBSCAN. It outputs the cluster labels
         that HDBSCAN converged on.
 
-        Parameters
-        ----------
-        None : None
-
-        Returns
-        -------
-        labels : np.array([int])
+        :return: labels
+        :rtype: np.array([int])
         """
         return self.hdbscan_.labels_

@@ -3,15 +3,17 @@
 """
 Utility functions for making fits to UMAP
 """
+import os
+import random
 import warnings
 from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.datasets import make_classification
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import KBinsDiscretizer, PowerTransformer, StandardScaler
-from sklearn.datasets import make_classification
 
 
 def extract_categorical(
@@ -21,17 +23,19 @@ def extract_categorical(
     fill_value="Missing",
     **kwargs,
 ) -> pd.DataFrame:
-    """Extracts categorical features into binary dummy dataframe
+    """
+    Extracts categorical features into binary dummy dataframe
 
-    Parameters:
-        df (pd.DataFrame): DataFrame with numerical and categorical features
-        cardinality_threshold: (int): Threshold to revert to using hashing when the number of
+    :param df: DataFrame with numerical and categorical features
+    :type df: pd.DataFrame
+    :param cardinality_threshold: Threshold to revert to using hashing when the number of
         categorical features are high. Default: 25
-        **kwargs : Additional arguments to pass to imputation, allows to customize
-            Note: Imputation defaults to filling with 'Missing'
-
-    Returns:
-        pd.DataFrame: binary dummy DataFrame of categorical features
+    :type cardinality_threshold: int, optional
+    :param **kwargs: Additional arguments to pass to imputation, allows to customize.
+        Note: Imputation defaults to filling with 'Missing'
+    :type **kwargs: dict, optional
+    :return: binary dummy DataFrame of categorical features
+    :rtype: pd.DataFrame
     """
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Input should be a pandas DataFrame")
@@ -76,25 +80,31 @@ def impute_categorical(
     custom_strategy: Optional[Callable[[pd.Series], object]] = None,
     **kwargs,
 ) -> pd.DataFrame:
-    """Imputes missing values in categorical features.
+    """
+    Imputes missing values in categorical features.
 
-    Parameters:
-        df (pd.DataFrame): DataFrame with categorical features
-        strategy (str, optional): The imputation strategy. Default is 'constant'.
-        fill_value (str, optional): The value to use for imputation when strategy is 'constant'. Default is 'Missing'.
-        custom_strategy (callable, optional): A custom function to compute the imputation value. Should take a Series and return an object.
-
-    Returns:
-        pd.DataFrame: DataFrame with imputed categorical features
+    :param df: DataFrame with categorical features
+    :type df: pd.DataFrame
+    :param strategy: The imputation strategy. Default is 'constant'.
+    :type strategy: str, optional
+    :param fill_value: The value to use for imputation when strategy is 'constant'. Default is 'Missing'.
+    :type fill_value: str, optional
+    :param custom_strategy: A custom function to compute the imputation value. Should take a Series and return an object.
+    :type custom_strategy: callable, optional
+    :return: DataFrame with imputed categorical features
+    :rtype: pd.DataFrame
 
     Example:
-        To use a custom strategy that imputes missing values with the second most frequent value, you can do:
+    To use a custom strategy that imputes missing values with the second most frequent value, you can do:
+
+    .. code-block:: python
 
         def second_most_frequent(s):
             return s.value_counts().index[1] if len(s.value_counts()) > 1 else s.value_counts().index[0]
 
         impute_categorical(df, custom_strategy=second_most_frequent)
     """
+
     if strategy not in ["constant", "most_frequent"]:
         raise ValueError(f"Invalid strategy for categorical: {strategy}")
 
@@ -113,15 +123,17 @@ def impute_categorical(
 
 
 def extract_numerical(df: pd.DataFrame, impute_strategy: str = "median", **kwargs) -> pd.DataFrame:
-    """Extracts numerical features into normalized numeric only dataframe
-
-    Parameters:
-        df (pd.DataFrame): DataFrame with numerical and categorical features
-        impute_strategy (str): The imputation strategy to use if null values are found. Default is 'median'
-
-    Returns:
-        pd.DataFrame: normalized numerical DataFrame of numerical features
     """
+    Extracts numerical features into normalized numeric only dataframe
+
+    :param df: DataFrame with numerical and categorical features
+    :type df: pd.DataFrame
+    :param impute_strategy: The imputation strategy to use if null values are found. Default is 'median'
+    :type impute_strategy: str, optional
+    :return: normalized numerical DataFrame of numerical features
+    :rtype: pd.DataFrame
+    """
+
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Input should be a pandas DataFrame")
     if df.empty:
@@ -139,12 +151,13 @@ def extract_numerical(df: pd.DataFrame, impute_strategy: str = "median", **kwarg
 def impute_numerical(numerical: pd.DataFrame, strategy: str = "median", **kwargs) -> pd.DataFrame:
     """Imputes numerical features with the given strategy
 
-    Parameters:
-        numerical (pd.DataFrame): DataFrame with numerical features
-        strategy (str): The imputation strategy. Default is 'median'
+    :param numerical: DataFrame with numerical features
+    :type numericals: pd.DataFrame
+    :param strategy: The imputation strategy. Default is 'median'
+    :type strategy: str
 
-    Returns:
-        pd.DataFrame: DataFrame with imputed numerical features
+    :return: DataFrame with imputed numerical features
+    :rtype: pd.DataFrame
     """
     if strategy not in ["median", "mean"]:
         raise ValueError(f"Invalid strategy for numerical: {strategy}")
@@ -159,15 +172,15 @@ def impute_numerical(numerical: pd.DataFrame, strategy: str = "median", **kwargs
 
 
 def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
-    """Power transforms numerical DataFrame
-
-    Parameters:
-        numerical (pd.DataFrame): Numerical features DataFrame
-
-    Returns:
-        pd.DataFrame: Normalized DataFrame of Numerical features
     """
+    Power transforms numerical DataFrame
 
+    :param numerical: Numerical features DataFrame
+    :type numerical: pd.DataFrame
+
+    :return: Normalized DataFrame of Numerical features
+    :rtype: pd.DataFrame
+    """
     for name in numerical.columns.tolist():
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
@@ -178,10 +191,16 @@ def transform_numerics(numerical: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_dataframe(n_samples: int = 1000, random_state: int = 42) -> pd.DataFrame:
-    """This will create dataframe for demonstration purposes.
+    """
+    This will create dataframe for demonstration purposes.
 
-    Returns:
-        pd.DataFrame: dataframe of categorical and numerical data
+    :param n_samples: Number of samples to make df from
+    :type n_samples: int
+    :param random_state: Random seed number
+    :type random_state: int
+
+    :return: dataframe of categorical and numerical data
+    :rtype: pd.DataFrame
     """
     X, _ = make_classification(
         n_samples=n_samples,
@@ -209,3 +228,13 @@ def make_dataframe(n_samples: int = 1000, random_state: int = 42) -> pd.DataFram
         df[c] = categorical[:, idx]
 
     return df
+
+
+def seed_everything(seed: int = 42):
+    """
+    Helper function to sett the random seed for everything to get better
+    reproduction of results
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)

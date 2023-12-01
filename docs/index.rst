@@ -7,13 +7,43 @@ Welcome to Amazon DenseClus's documentation!
 ============================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
-   amazon_denseclus
+   denseclus
 
-.. automodule:: amazon_denseclus
+.. automodule:: denseclus
    :members:
+
+Submodules
+----------
+
+denseclus.DenseClus module
+--------------------------
+
+.. automodule:: denseclus.DenseClus
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+denseclus.utils module
+----------------------
+
+.. automodule:: denseclus.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: denseclus
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 
 Notebooks
 =========
@@ -21,9 +51,9 @@ Notebooks
 .. toctree::
    :maxdepth: 2
 
-   notebooks/01_DenseClusExampleNB.ipynb
-   notebooks/02_TuningWithHDBSCAN.ipynb
-   notebooks/03_ValidationForUMAP.ipynb
+   rst/01_DenseClusExampleNB.ipynb
+   rst/02_TuningWithHDBSCAN.ipynb
+   rst/03_ValidationForUMAP.ipynb
 
 Indices and tables
 ==================
