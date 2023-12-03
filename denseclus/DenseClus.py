@@ -44,7 +44,7 @@ sh.setFormatter(
 )
 logger.addHandler(sh)
 
-# this suppresses the dice metric warning
+# this suppresses the jaccard metric warning(s)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
@@ -145,7 +145,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         # Default parameters
         default_umap_params = {
             "categorical": {
-                "metric": "dice",
+                "metric": "jaccard",
                 "n_neighbors": 30,
                 "n_components": 5,
                 "min_dist": 0.0,
