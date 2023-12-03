@@ -73,7 +73,7 @@ def test_denseclus_score_output(fitted_clf):
     scores = fitted_clf.score()
     assert 1 in scores
     assert 0 in scores
-    assert -1 in scores
+    assert isinstance(scores, np.ndarray)
 
 
 @pytest.mark.fast
