@@ -34,7 +34,7 @@ import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
 
-from .utils import extract_categorical, extract_numerical
+from .utils import extract_categorical, extract_numerical, seed_everything
 
 logger = logging.getLogger("denseclus")
 logger.setLevel(logging.ERROR)
@@ -66,7 +66,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Method by which to combine embeddings spaces.
                 Options include: intersection, union, contrast,
                 methods for combining the embeddings: including
-                'intersection', 'union', 'contrast', and 'intersection_union_mapper'.
+                'intersection', 'union', 'contrast','intersection_union_mapper', and 'ensemble'
 
                 'intersection' preserves the numerical embeddings more, focusing on the quantitative aspects of
                 the data. This method is particularly useful when the numerical data is of higher importance or
@@ -86,6 +86,11 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 applies the 'union' method to preserve the categorical embeddings. This method is useful when both
                 numerical and categorical data are important, but one type of data is not necessarily more
                 important than the other.
+
+                'Ensemble' does not combine umaps at all and instead will keep them separate with ability to
+                run preidction on new points using approximate_predict from HDSCAN. Points are voted on from both
+                emedding layers with ties being broken via assignment probabilities.
+
                 See: https://umap-learn.readthedocs.io/en/latest/composing_models.html
 
             verbose : bool, default=False
@@ -128,10 +133,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             "union",
             "contrast",
             "intersection_union_mapper",
+            "ensemble",
         ]:
             raise ValueError("umap_combine_method must be valid selection")
 
         self.random_state = random_state
+        seed_everything(self.random_state)
+
         self.umap_combine_method = umap_combine_method
 
         # Default parameters
@@ -240,17 +248,18 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self._fit_numerical()
 
         logger.info("Mapping/Combining Embeddings")
-        self._umap_embeddings()
+        if self.umap_combine_method != "ensemble":
+            self._umap_embeddings()
 
         logger.info("Fitting HDBSCAN...")
         self._fit_hdbscan()
 
-    def _fit_numerical(self):
+    def _fit_numerical(self) -> None:
         """
         Fit a UMAP based on numerical data
 
         Returns:
-            self
+            None
         """
         try:
             logger.info("Fitting UMAP for Numerical data")
@@ -265,75 +274,16 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             self.numerical_umap_ = numerical_umap
             logger.info("Numerical UMAP fitted successfully")
 
-            return self
-
         except Exception as e:
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
-    def fit_predict(self, df_old: pd.DataFrame, df_new: pd.DataFrame) -> np.array:
-        """
-        Generate predictions on new data points.
-        Refits UMAP embeddings and then uses the HDBSCAN's approximate_predict function to predict the cluster labels and strengths.
-
-
-        Parameters
-        ----------
-        df_old : pd.DataFrame
-            The old data for which to generate predictions.
-            This should be a DataFrame with the same structure as the one used in the fit method.
-        df_new : pd.DataFrame
-            The new data for which to generate predictions.
-            This should be a DataFrame with the same structure as the one used in the fit method.
-
-        Returns
-        -------
-        labels : np.array
-            The predicted cluster labels for each row in df_new.
-        strengths : np.array
-            The strengths of the predictions for each row in df_new.
-        """
-        df_combined = pd.concat([df_old, df_new])
-
-        categorical_combined = extract_categorical(df_combined, **self.kwargs)
-        numerical_combined = extract_numerical(df_combined, **self.kwargs)
-
-        self.categorical_umap_.fit(categorical_combined)
-        self.numerical_umap_.fit(numerical_combined)
-
-        categorical_embedding = self.categorical_umap_.embedding_
-        numerical_embedding = self.numerical_umap_.embedding_
-
-        # Perform the operations on the new embeddings
-        if self.umap_combine_method == "intersection":
-            mapper_new = numerical_embedding * categorical_embedding
-        elif self.umap_combine_method == "union":
-            mapper_new = numerical_embedding + categorical_embedding
-        elif self.umap_combine_method == "contrast":
-            mapper_new = numerical_embedding - categorical_embedding
-        elif self.umap_combine_method == "intersection_union_mapper":
-            logger.info("Refitting new UMAP for Intersection Mapper")
-            intersection_mapper = umap.UMAP(
-                random_state=self.random_state,
-                n_jobs=1 if self.random_state is not None else -1,
-                **self.umap_params["combined"],
-            ).fit(numerical_embedding)
-            mapper_new = intersection_mapper.embedding_ * (
-                numerical_embedding + categorical_embedding
-            )
-        else:
-            raise ValueError("Select valid UMAP combine method")
-
-        labels, strengths = hdbscan.approximate_predict(self.hdbscan_, mapper_new[-len(df_new) :])
-
-        return np.stack((labels, strengths), axis=-1)
-
-    def _fit_categorical(self):
+    def _fit_categorical(self) -> None:
         """
         Fit a UMAP based on categorical data
 
         Returns:
-            self
+            None
         """
         try:
             logger.info("Fitting UMAP for categorical data")
@@ -346,20 +296,19 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             ).fit(self.categorical_)
             self.categorical_umap_ = categorical_umap
             logger.info("Categorical UMAP fitted successfully")
-            return self
 
         except Exception as e:
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
-    def _umap_embeddings(self):
+    def _umap_embeddings(self) -> None:
         """Combines the numerical and categorical UMAP embeddings based on the specified method.
 
         Supported: 'intersection', 'union', 'contrast', and 'intersection_union_mapper'
 
         Returns
         -------
-            self
+            None
         """
         logger.info("Combining UMAP embeddings using method: %s", self.umap_combine_method)
         if self.umap_combine_method == "intersection":
@@ -383,9 +332,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.error("Invalid UMAP combine method: %s", self.umap_combine_method)
             raise ValueError("Select valid UMAP combine method")
 
-        return self
-
-    def _fit_hdbscan(self):
+    def _fit_hdbscan(self) -> None:
         """Fits HDBSCAN to the combined embeddings.
 
         Parameters
@@ -393,22 +340,45 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             None : None
         Returns
         -------
-            self
+            None
         """
-        logger.info("Fitting HDBSCAN with default parameters")
-        hdb_ = hdbscan.HDBSCAN(
-            prediction_data=True,
-            **self.hdbscan_params,
-        ).fit(self.mapper_.embedding_)
-        self.hdbscan_ = hdb_
+        logger.info("Fitting HDBSCAN")
+        if self.umap_combine_method != "ensemble":
+            logger.info("Fitting single HDBSCAN")
+            hdb_ = hdbscan.HDBSCAN(
+                **self.hdbscan_params,
+            ).fit(self.mapper_.embedding_)
+            self.hdbscan_ = hdb_
+            self.labels_ = hdb_.labels_
+            self.probabilities_ = hdb_.probabilities_
+
+        else:
+            logger.info("Fitting two HDBSCANs for ensemble")
+            hdb_numerical_ = hdbscan.HDBSCAN(prediction_data=True, **self.hdbscan_params).fit(
+                self.numerical_umap_.embedding_,
+            )
+            hdb_catergorical_ = hdbscan.HDBSCAN(prediction_data=True, **self.hdbscan_params).fit(
+                self.categorical_umap_.embedding_,
+            )
+            self.hdbscan_ = {"hdb_numerical": hdb_numerical_, "hdb_categorical": hdb_catergorical_}
+
+            # combine labels and probabilities for points
+            predictions = self.combine_labels_and_probabilities(
+                hdb_numerical_.labels_,
+                hdb_numerical_.probabilities_,
+                hdb_catergorical_.labels_,
+                hdb_catergorical_.probabilities_,
+            )
+
+            self.labels_ = predictions[:, 0]
+            self.probabilities_ = predictions[:, 1]
 
         logger.info("HDBSCAN fit")
-        return self
 
-    def score(self):
+    def score(self) -> np.array:
         """Returns the cluster assigned to each row.
 
-        This is wrapper function for HDBSCAN. It outputs the cluster labels
+        This is a wrapper function for HDBSCAN. It outputs the cluster labels
         that HDBSCAN converged on.
 
         Parameters
@@ -417,6 +387,109 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
         Returns
         -------
-        labels : np.array([int])
+        labels : np.array
         """
-        return self.hdbscan_.labels_
+        return self.labels_
+
+    def predict(self, df_new: pd.DataFrame) -> np.array:
+        """
+        Generate predictions on new data points for method 'ensemble'.
+        Will use a weighted vote to pick the most representative cluster from two embeddings.
+
+        Parameters
+        ----------
+        df_new : pd.DataFrame
+            The new data for which to generate predictions.
+            This should be a DataFrame with the same structure as the one used in the fit method.
+
+        Returns
+        -------
+        labels : np.array
+            The predicted cluster labels for each row in df_new.
+         probabilities : np.array
+            The  probabilities of the predictions for each row in df_new.
+        """
+        if self.umap_combine_method != "ensemble":
+            raise ValueError('predict is only supported for method "ensemble"')
+
+        numerical_values = extract_numerical(df_new, **self.kwargs)
+        categorical_values = extract_categorical(df_new, **self.kwargs)
+
+        # transform with umaps
+        numerical_transform = self.numerical_umap_.transform(numerical_values)
+        try:
+            categorical_transform = self.categorical_umap_.transform(categorical_values)
+        except ValueError as e:
+            logger.error("Failed to transform categorical values: %s", str(e))
+            raise ValueError(
+                "Failed to transform categorical values",
+                "This is most likely due to a lack of all categories in the data",
+            ) from e  # pylint: disable=W0707
+
+        # approximate predict
+        numerical_labels, numerical_probabilities = hdbscan.approximate_predict(
+            self.hdbscan_["hdb_numerical"],
+            numerical_transform,
+        )
+        categorical_labels, categorical_probabilities = hdbscan.approximate_predict(
+            self.hdbscan_["hdb_categorical"],
+            categorical_transform,
+        )
+
+        # vote on cluster assignment
+        predictions = self.combine_labels_and_probabilities(
+            numerical_labels,
+            numerical_probabilities,
+            categorical_labels,
+            categorical_probabilities,
+        )
+
+        return predictions
+
+    @staticmethod
+    def combine_labels_and_probabilities(
+        numerical_labels: np.array,
+        numerical_probabilities: np.array,
+        categorical_labels: np.array,
+        categorical_probabilities: np.array,
+    ) -> np.array:
+        """
+         Combine labels and probabilities from two HDBSCAN models.
+
+         Parameters
+         ----------
+         numerical_labels : np.ndarray
+             Labels from the numerical HDBSCAN model.
+         numerical_probabilities : np.ndarray
+             Probabilities from the numerical HDBSCAN model.
+         categorical_labels : np.ndarray
+             Labels from the categorical HDBSCAN model.
+         categorical_probabilities : np.ndarray
+             Probabilities from the categorical HDBSCAN model.
+
+         Returns
+         -------
+         labels : np.ndarray
+             Combined labels.
+         probabilities : np.ndarray
+        Combined probabilities.
+        """
+        labels = np.where(
+            numerical_labels == categorical_labels,
+            numerical_labels,
+            np.where(
+                numerical_probabilities > categorical_probabilities,
+                numerical_labels,
+                categorical_labels,
+            ),
+        )
+        probabilities = np.where(
+            numerical_labels == categorical_labels,
+            (numerical_probabilities + categorical_probabilities) / 2.0,  # normalize
+            np.where(
+                numerical_probabilities > categorical_probabilities,
+                numerical_probabilities,
+                categorical_probabilities,
+            ),
+        )
+        return np.stack((labels, probabilities), axis=-1)

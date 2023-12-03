@@ -47,7 +47,7 @@ print(scores[0:10])
 
 ### Prediction
 
-DenseClus uses a `fit_predict` method with the original fitted dataframe and the new one.
+DenseClus uses a `predict` method whhne `umap_combine_method` is set to `ensemble`.
 Results are return in 2d array with the first part being the labels and the second part the probabilities.
 
 ```python
@@ -59,10 +59,10 @@ RANDOM_STATE = 10
 df = make_dataframe(random_state=RANDOM_STATE)
 train = df.sample(frac=0.8, random_state=RANDOM_STATE)
 test = df.drop(train.index)
-clf = DenseClus(random_state=RANDOM_STATE)
+clf = DenseClus(random_state=RANDOM_STATE, umap_combine_method='ensemble')
 clf.fit(train)
 
-predictions = clf.fit_predict(train, test)
+predictions = clf.predict(test)
 print(predictions) # labels, probabilities
 ```
 

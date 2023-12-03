@@ -5,7 +5,8 @@ Utility functions for making fits to UMAP
 """
 import warnings
 from typing import Callable, Optional
-
+import random
+import os
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction import FeatureHasher
@@ -209,3 +210,13 @@ def make_dataframe(n_samples: int = 1000, random_state: int = 42) -> pd.DataFram
         df[c] = categorical[:, idx]
 
     return df
+
+
+def seed_everything(seed: int = 42):
+    """
+    Helper function to sett the random seed for everything to get better
+    reproduction of results
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)

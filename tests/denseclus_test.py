@@ -65,14 +65,15 @@ def test_repr(union_mapper_clf):
 @pytest.mark.fast
 def test_denseclus_score_length(fitted_clf):
     scores = fitted_clf.score()
-    assert len(scores) == 100
+    assert len(scores) == 1000
 
 
 @pytest.mark.fast
 def test_denseclus_score_output(fitted_clf):
     scores = fitted_clf.score()
-    expected_output = np.array([-1] * 100)
-    assert np.all(expected_output == scores)
+    assert 1 in scores
+    assert 0 in scores
+    assert -1 in scores
 
 
 @pytest.mark.fast
@@ -122,12 +123,6 @@ def test_predict_proba_output_shape(fitted_predictions, df_len):
 
 
 @pytest.mark.fast
-def test_predict_input_type(union_mapper_clf):
+def test_predict_input_type(fitted_clf):
     with pytest.raises(TypeError):
-        union_mapper_clf.fit_predict("not a dataframe")
-
-
-@pytest.mark.fast
-def test_predict_proba_input_type(union_mapper_clf):
-    with pytest.raises(TypeError):
-        union_mapper_clf.fit_predict("not a dataframe")
+        fitted_clf.predict("not a dataframe")
