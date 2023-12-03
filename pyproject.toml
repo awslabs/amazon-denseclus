@@ -76,9 +76,6 @@ select = ["E", "W"]
 ignore = ["E203", "E231", "E402", "E712", "F401","E501"]
 plugins = ["flake8-bugbear", "mccabe"]
 
-[tool.isort]
-combine-as-imports = true
-
 [tool.autoflake]
 remove-all-unused-imports = true
 remove-unused-variables = true
