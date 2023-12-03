@@ -33,15 +33,41 @@ All preprocessing and extraction are done under the hood, just call fit and then
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
-df = make_dataframe()
 
-clf = DenseClus()
+df = make_dataframe()
+clf = DenseClus(df)
 clf.fit(df)
 
-print(clf.score())
+scores = clf.score()
+print(scores[0:10])
 ```
 
+
 ## Usage
+
+### Prediction
+
+DenseClus uses a `predict` method whhne `umap_combine_method` is set to `ensemble`.
+Results are return in 2d array with the first part being the labels and the second part the probabilities.
+
+```python
+from denseclus import DenseClus
+from denseclus.utils import make_dataframe
+
+RANDOM_STATE = 10
+
+df = make_dataframe(random_state=RANDOM_STATE)
+train = df.sample(frac=0.8, random_state=RANDOM_STATE)
+test = df.drop(train.index)
+clf = DenseClus(random_state=RANDOM_STATE, umap_combine_method='ensemble')
+clf.fit(train)
+
+predictions = clf.predict(test)
+print(predictions) # labels, probabilities
+```
+
+
+### On Combination Method
 
 For a slower but more **stable** results select `intersection_union_mapper` to combine embedding layers via a third UMAP, which will provide equal weight to both numerics and categoriel columns. By default, you are setting the random seed which eliminates the ability for UMAP to run in parallel but will help circumevent some of [the randomness](https://umap-learn.readthedocs.io/en/latest/reproducibility.html) of the algorithm.
 
@@ -51,10 +77,11 @@ clf = DenseClus(
 )
 ```
 
+
 ### Advanced Usage
 
 For advanced users, it's possible to select more fine-grained control of the underlying algorithms by passing
-dictionaries into `DenseClus` class.
+dictionaries into `DenseClus` class for either UMAP or HDBSCAN.
 
 For example:
 ```python
