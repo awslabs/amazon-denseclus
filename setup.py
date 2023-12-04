@@ -9,7 +9,7 @@ with open("requirements.txt") as f:
 
 setuptools.setup(
     name="amazon_denseclus",
-    version="0.1.2",
+    version="0.2.0",
     author="Charles Frenzel & Baichuan Sun",
     description="Dense Clustering for Mixed Data Types",
     long_description=long_description,
