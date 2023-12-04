@@ -74,7 +74,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             random_state : int, default=42
                 Random State for both UMAP and numpy.random.
                 If set to None UMAP will run in Numba in multicore mode but
-                results may vary between runs.
+                results may vary between runs (when using CPU).
                 Setting a seed may help to offset the stochastic nature of
                 UMAP by setting it with fixed random seed.
 
@@ -127,7 +127,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                                 'combined' : {'n_neighbors': 5, 'min_dist': 0.1}
                             }
 
-            gpu_umap: bool (default False)
+            gpu_umap: bool default=False
                 If True umap will use the rapidsai cuml library to perform the
                 dimensionality reduction. This will lead to a significant speedup
                 in the computation time during model creation. To install rapidsai
@@ -140,7 +140,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Example:
                 hdbscan_params = {'min_cluster_size': 10}
 
-            gpu_hdbscan: bool (default False)
+            gpu_hdbscan: bool, default=False
                 If True hdbscan will use the rapidsai cuml library to perform the
                 clustering. This will lead to a significant speedup in the computation
                 time during model creation. To install rapidsai cuml follow the
@@ -238,10 +238,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
             warnings.warn = noop
 
+        if (gpu_umap and not _HAVE_CUMAP) or (gpu_hdbscan and not _HAVE_CUHDBSCAN):
+            logger.info("cuML not installed, using CPU")
+
         if isinstance(random_state, int):
             np.random.seed(seed=random_state)
         else:  # pragma: no cover
-            if (gpu_umap and _HAVE_CUMAP) == False:
+            if not gpu_umap or not _HAVE_CUMAP:
                 logger.info("No random seed passed, running UMAP in Numba, parallel")
 
         self.kwargs = kwargs
@@ -300,7 +303,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             data: the data to fit the UMAP on
             parameters: the parameters to use for the UMAP
             use_gpu: whether to use the GPU or not
-            random_state: random state to use for the UMAP. if null will fit UMAP in parallel.
+            random_state: random state to use for the UMAP. if null and using CPU will fit UMAP in parallel.
         Returns:
             the fitted UMAP
         """
@@ -310,15 +313,15 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 verbose=False,
                 **parameters,
             ).fit(data)
-        else:
-            logger.info("Fitting UMAP using CPU")
-            return umap.UMAP(
-                random_state=random_state,
-                n_jobs=1 if random_state is not None else -1,
-                verbose=False,
-                **parameters,
-            ).fit(data)
-            
+        
+        logger.info("Fitting UMAP using CPU")
+        return umap.UMAP(
+            random_state=random_state,
+            n_jobs=1 if random_state is not None else -1,
+            verbose=False,
+            **parameters,
+        ).fit(data)
+    
     def _fit_numerical(self) -> None:
         """
         Fit a UMAP based on numerical data
@@ -406,27 +409,25 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         Args:
             data (array-like): embeddings to cluster
             parameters (dict): _description_
-            use_gpu (bool): whether to use GPU if RAPIDS installed
+            use_gpu (bool): whether to use GPU
 
         Returns:
             cuml.cluster.HDBSCAN/hdbscan.HDBSCAN: fitted HDBSCAN
         """
-        logger.info(f"Fitting HDBSCAN with parameters {parameters}")
+        logger.info("Fitting HDBSCAN with parameters %s", parameters)
 
         if use_gpu and _HAVE_CUHDBSCAN:
             logger.info("Using GPU for HDBSCAN")
-            hdb_ = cuHDBSCAN(
+            return cuHDBSCAN(
                 prediction_data=True,
                 **parameters,
             ).fit(data)
-        else:
-            logger.info("Using CPU for HDBSCAN")
-            hdb_ = hdbscan.HDBSCAN(
-                prediction_data=True,
-                **parameters,
-            ).fit(data)
-            
-        return hdb_        
+        
+        logger.info("Using CPU for HDBSCAN")
+        return hdbscan.HDBSCAN(
+            prediction_data=True,
+            **parameters,
+        ).fit(data)
 
     def _fit_hdbscan(self) -> None:
         """Fits HDBSCAN to the combined embeddings.
@@ -468,8 +469,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
             # combine labels and probabilities for points
 
-            # explict cast to np.array because labels can be series or np array depending on 
-            # input data format for GPU HDBSCAN - series index mismatch will cause error
+            # explict cast to np.array because labels can be series or np array
+            # series index mismatch will cause error
             predictions = self.combine_labels_and_probabilities(
                 np.array(hdb_numerical_.labels_),
                 np.array(hdb_numerical_.probabilities_),
@@ -545,8 +546,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
         # vote on cluster assignment
         
-        # explict cast to np.array because labels can be series or np array depending on 
-        # input data format for GPU HDBSCAN - series index mismatch will cause error
+        # explict cast to np.array because labels can be series or np array
+        # series index mismatch will cause error
         predictions = self.combine_labels_and_probabilities(
             np.array(numerical_labels),
             np.array(numerical_probabilities),
