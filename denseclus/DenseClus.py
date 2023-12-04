@@ -417,7 +417,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.info("Using GPU for HDBSCAN")
             hdb_ = cuHDBSCAN(
                 prediction_data=True,
-                # *parameters,
+                **parameters,
             ).fit(data)
         else:
             logger.info("Using CPU for HDBSCAN")
