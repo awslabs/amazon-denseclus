@@ -167,6 +167,9 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         ]:
             raise ValueError("umap_combine_method must be valid selection")
 
+        if (gpu_hdbscan or gpu_umap) and umap_combine_method != 'ensemble':
+            raise ValueError("Only ensemble supported for GPU")
+
         self.random_state = random_state
         seed_everything(self.random_state)
 
@@ -175,10 +178,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         # Default parameters
         default_umap_params = {
             "categorical": {
-                # TODO: identify ideal default distance metric, originally dice but not supported by cuml umap 
-                # jaccard is an option but need to figure out how to pass sparse input
+                # jaccard is an option but only takes sparse input
                 "metric": "hamming",
-                # "metric": "jaccard",
                 "n_neighbors": 30,
                 "n_components": 5,
                 "min_dist": 0.0,
@@ -240,7 +241,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         if isinstance(random_state, int):
             np.random.seed(seed=random_state)
         else:  # pragma: no cover
-            logger.info("No random seed passed, running UMAP in Numba, parallel")
+            if (gpu_umap and _HAVE_CUMAP) == False:
+                logger.info("No random seed passed, running UMAP in Numba, parallel")
 
         self.kwargs = kwargs
 
@@ -465,6 +467,9 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             self.hdbscan_ = {"hdb_numerical": hdb_numerical_, "hdb_categorical": hdb_catergorical_}
 
             # combine labels and probabilities for points
+
+            # explict cast to np.array because labels can be series or np array depending on 
+            # input data format for GPU HDBSCAN - series index mismatch will cause error
             predictions = self.combine_labels_and_probabilities(
                 np.array(hdb_numerical_.labels_),
                 np.array(hdb_numerical_.probabilities_),
@@ -539,11 +544,14 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         )
 
         # vote on cluster assignment
+        
+        # explict cast to np.array because labels can be series or np array depending on 
+        # input data format for GPU HDBSCAN - series index mismatch will cause error
         predictions = self.combine_labels_and_probabilities(
-            numerical_labels,
-            numerical_probabilities,
-            categorical_labels,
-            categorical_probabilities,
+            np.array(numerical_labels),
+            np.array(numerical_probabilities),
+            np.array(categorical_labels),
+            np.array(categorical_probabilities),
         )
 
         return predictions
