@@ -27,6 +27,7 @@ Date: November 2023
 
 import logging
 import warnings
+from importlib.util import find_spec
 
 import hdbscan
 import numpy as np
@@ -34,23 +35,22 @@ import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
 
-
-# CUML UMAP and HDBSCAN integration inspired by and adapted from https://github.com/ddangelov/Top2Vec/tree/master
-try:
-    from cuml.manifold.umap import UMAP as cuUMAP
-
-    _HAVE_CUMAP = True
-except ImportError:
-    _HAVE_CUMAP = False
-
-try:
-    from cuml.cluster import HDBSCAN as cuHDBSCAN
-
-    _HAVE_CUHDBSCAN = True
-except ImportError:
-    _HAVE_CUHDBSCAN = False
-
 from .utils import extract_categorical, extract_numerical, seed_everything
+
+# cuML UMAP and HDBSCAN integration adapted from https://github.com/ddangelov/Top2Vec/tree/master
+_HAVE_CUMAP = False
+_HAVE_CUHDBSCAN = False
+
+# check if we have libraries for GPU optimized UMAP and HDBSCAN installed
+if find_spec("cuml"):
+    if find_spec("cuml.manifold.umap"):
+        from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611
+
+        _HAVE_CUMAP = True
+    if find_spec("cuml.cluster"):
+        from cuml.cluster import HDBSCAN as cuHDBSCAN
+
+        _HAVE_CUHDBSCAN = True
 
 logger = logging.getLogger("denseclus")
 logger.setLevel(logging.ERROR)
