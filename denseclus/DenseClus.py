@@ -27,7 +27,6 @@ Date: November 2023
 
 import logging
 import warnings
-from typing import Union
 
 import hdbscan
 import numpy as np
@@ -406,7 +405,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     @staticmethod
     def _fit_single_hdbscan(
         data: np.array, parameters: dict, prediction_data: bool = False, use_gpu: bool = False
-    ) -> Union[cuHDBSCAN, hdbscan.HDBSCAN]:
+    ) -> hdbscan.HDBSCAN:
         """fit HDBSCAN to the provided embeddings
 
         Args:
