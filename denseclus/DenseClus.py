@@ -44,11 +44,11 @@ _HAVE_CUHDBSCAN = False
 # check if we have libraries for GPU optimized UMAP and HDBSCAN installed
 if find_spec("cuml"):
     if find_spec("cuml.manifold.umap"):
-        from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611
+        from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611, E0401
 
         _HAVE_CUMAP = True
     if find_spec("cuml.cluster"):
-        from cuml.cluster import HDBSCAN as cuHDBSCAN
+        from cuml.cluster import HDBSCAN as cuHDBSCAN  # pylint: disable=E0611, E0401
 
         _HAVE_CUHDBSCAN = True
 
