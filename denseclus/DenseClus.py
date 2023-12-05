@@ -153,12 +153,12 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         random_state: int = 42,
         umap_combine_method: str = "intersection",
         verbose: bool = False,
-        umap_params=None,
-        gpu_umap=None,
-        hdbscan_params=None,
-        gpu_hdbscan=None,
+        umap_params: dict = None,
+        gpu_umap: bool = None,
+        hdbscan_params: dict = None,
+        gpu_hdbscan: bool = None,
         **kwargs,
-    ):
+    ):  # pylint: disable=R0912
         if umap_combine_method not in [
             "intersection",
             "union",
