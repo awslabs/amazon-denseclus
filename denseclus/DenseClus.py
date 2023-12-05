@@ -27,6 +27,7 @@ Date: November 2023
 
 import logging
 import warnings
+from typing import Union
 
 import hdbscan
 import numpy as np
@@ -302,7 +303,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         Args:
             data: the data to fit the UMAP on
             parameters: the parameters to use for the UMAP
-            use_gpu: whether to use the GPU or not
+            use_gpu: whether to use GPU or not
             random_state: random state to use for the UMAP. if null and using CPU will fit UMAP in parallel.
         Returns:
             the fitted UMAP
@@ -403,12 +404,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             raise ValueError("Select valid UMAP combine method")
 
     @staticmethod
-    def _fit_single_hdbscan(data, parameters, use_gpu) -> None:
+    def _fit_single_hdbscan(data: np.array, parameters: dict, prediction_data: bool = False, use_gpu: bool = False) -> Union[cuHDBSCAN, hdbscan.HDBSCAN]:
         """fit HDBSCAN to the provided embeddings
 
         Args:
             data (array-like): embeddings to cluster
-            parameters (dict): _description_
+            parameters (dict): hdbscan parameters
+            prediction_data (bool): whether to generate extra cached data for predicting labels or membership vectors
             use_gpu (bool): whether to use GPU
 
         Returns:
@@ -419,13 +421,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         if use_gpu and _HAVE_CUHDBSCAN:
             logger.info("Using GPU for HDBSCAN")
             return cuHDBSCAN(
-                prediction_data=True,
+                prediction_data=prediction_data,
                 **parameters,
             ).fit(data)
         
         logger.info("Using CPU for HDBSCAN")
         return hdbscan.HDBSCAN(
-            prediction_data=True,
+            prediction_data=prediction_data,
             **parameters,
         ).fit(data)
 
@@ -445,7 +447,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
             hdb_ = self._fit_single_hdbscan(
                 data=self.mapper_.embedding_,
-                parameters = self.hdbscan_params,
+                parameters=self.hdbscan_params,
+                prediction_data=False,
                 use_gpu=self._gpu_hdbscan
             )
 
@@ -458,11 +461,13 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             hdb_numerical_ = self._fit_single_hdbscan(
                 data=self.numerical_umap_.embedding_,
                 parameters = self.hdbscan_params,
+                prediction_data=True,
                 use_gpu=self._gpu_hdbscan
             )
             hdb_catergorical_ = self._fit_single_hdbscan(
                 data=self.categorical_umap_.embedding_,
                 parameters = self.hdbscan_params,
+                prediction_data=True,
                 use_gpu=self._gpu_hdbscan
             )
             self.hdbscan_ = {"hdb_numerical": hdb_numerical_, "hdb_categorical": hdb_catergorical_}
