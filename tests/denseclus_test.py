@@ -5,6 +5,8 @@ import pytest
 import warnings
 from denseclus.DenseClus import DenseClus
 
+LABELS = 1000  # make_dataframe default of 1000
+
 
 def check_embedding_shape(embedding, expected_shape):
     assert embedding.shape == expected_shape
@@ -45,11 +47,6 @@ def test_denseclus_fit_is_df(union_mapper_clf):
         union_mapper_clf.fit([1, 2, 3])
 
 
-@pytest.mark.slow
-def test_denseclus_score(union_mapper_clf, df):
-    assert len(union_mapper_clf.score()) == len(df)
-
-
 @pytest.mark.fast
 def test_denseclus_method(df):
     with pytest.raises(ValueError):
@@ -63,14 +60,14 @@ def test_repr(union_mapper_clf):
 
 
 @pytest.mark.fast
-def test_denseclus_score_length(fitted_clf):
-    scores = fitted_clf.score()
-    assert len(scores) == 1000
+def test_denseclus_evalute_length(fitted_clf):
+    scores = fitted_clf.evaluate()
+    assert len(scores) == LABELS
 
 
 @pytest.mark.fast
-def test_denseclus_score_output(fitted_clf):
-    scores = fitted_clf.score()
+def test_denseclus_evalute_output(fitted_clf):
+    scores = fitted_clf.evaluate()
     assert 1 in scores
     assert 0 in scores
     assert isinstance(scores, np.ndarray)
@@ -126,3 +123,50 @@ def test_predict_proba_output_shape(fitted_predictions, df_len):
 def test_predict_input_type(fitted_clf):
     with pytest.raises(TypeError):
         fitted_clf.predict("not a dataframe")
+
+
+@pytest.mark.fast
+def test_mapper_property(union_mapper_clf):
+    try:
+        _ = union_mapper_clf.mapper_
+    except AttributeError:
+        pytest.fail("dense_clus.mapper_ raised AttributeError unexpectedly!")
+
+
+@pytest.mark.fast
+def test_umap_combine_method_property(fitted_clf):
+    try:
+        fitted_clf.umap_combine_method = "intersection"
+    except ValueError:
+        pytest.fail("Setting valid umap_combine_method raised ValueError unexpectedly!")
+
+    with pytest.raises(ValueError):
+        fitted_clf.umap_combine_method = "invalid_method"
+
+
+@pytest.mark.fast
+def test_random_state_property(fitted_clf):
+    try:
+        fitted_clf.random_state = 123
+    except ValueError:
+        pytest.fail("Setting valid random_state raised ValueError unexpectedly!")
+
+    with pytest.raises(ValueError):
+        fitted_clf.random_state = "invalid_state"
+
+
+def test_evaluate_mapper(union_mapper_clf):
+    labels = union_mapper_clf.evaluate()
+
+    assert isinstance(labels, np.ndarray)
+    assert len(labels) == LABELS
+    assert len(labels) == LABELS
+    assert len(labels) == LABELS
+
+
+def test_evaluate(fitted_clf):
+    labels = fitted_clf.evaluate()
+
+    assert isinstance(labels, np.ndarray)
+    assert len(labels) == LABELS
+    assert len(labels) == LABELS
