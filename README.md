@@ -38,7 +38,7 @@ df = make_dataframe()
 clf = DenseClus(df)
 clf.fit(df)
 
-scores = clf.score()
+scores = clf.evaluate()
 print(scores[0:10])
 ```
 
@@ -47,7 +47,7 @@ print(scores[0:10])
 
 ### Prediction
 
-DenseClus uses a `predict` method whhne `umap_combine_method` is set to `ensemble`.
+DenseClus uses a `predict` method when `umap_combine_method` is set to `ensemble`.
 Results are return in 2d array with the first part being the labels and the second part the probabilities.
 
 ```python
@@ -74,6 +74,21 @@ For a slower but more **stable** results select `intersection_union_mapper` to c
 ```python
 clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
+)
+```
+
+### To Use with GPU with Ensemble
+
+To use with gpu first have [rapids installed](https://docs.rapids.ai/install#selector).
+You can do this as setup by providing cuda verision.
+`pip install denseclus[gpu-cu12]`
+
+Then to run:
+
+```python
+clf = DenseClus(
+    umap_combine_method="ensemble",
+    use_gpu=True
 )
 ```
 

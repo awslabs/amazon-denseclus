@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 This file contains the implementation of DenseClus.
 
@@ -18,16 +16,13 @@ Usage:
 
     # Return the clusters from the dataframe
     clusters = dense_clus.score()
-
-
-Authors: Charles Frenzel, Baichaun Sun
-Date: November 2023
 """
 
 
 import logging
 import warnings
 from importlib.util import find_spec
+from typing import Union
 
 import hdbscan
 import numpy as np
@@ -35,22 +30,15 @@ import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
 
-from .utils import extract_categorical, extract_numerical, seed_everything
+from .categorical import extract_categorical
+from .numerical import extract_numerical
+from .utils import seed_everything
 
-# cuML UMAP and HDBSCAN integration adapted from https://github.com/ddangelov/Top2Vec/tree/master
-_HAVE_CUMAP = False
-_HAVE_CUHDBSCAN = False
 
-# check if we have libraries for GPU optimized UMAP and HDBSCAN installed
 if find_spec("cuml"):
-    if find_spec("cuml.manifold.umap"):
-        from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611, E0401
+    from cuml.cluster import HDBSCAN as cuHDBSCAN  # pylint: disable=E0611, E0401
+    from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611, E0401
 
-        _HAVE_CUMAP = True
-    if find_spec("cuml.cluster"):
-        from cuml.cluster import HDBSCAN as cuHDBSCAN  # pylint: disable=E0611, E0401
-
-        _HAVE_CUHDBSCAN = True
 
 logger = logging.getLogger("denseclus")
 logger.setLevel(logging.ERROR)
@@ -62,6 +50,14 @@ logger.addHandler(sh)
 
 # this suppresses the jaccard metric warning(s)
 warnings.filterwarnings("ignore", category=UserWarning)
+
+VALID_UMAP_COMBINE_METHODS = [
+    "intersection",
+    "union",
+    "contrast",
+    "intersection_union_mapper",
+    "ensemble",
+]
 
 
 class DenseClus(BaseEstimator, ClassifierMixin):
@@ -126,13 +122,6 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                                 'numerical': {'n_neighbors': 20, 'min_dist': 0.2}
                                 'combined' : {'n_neighbors': 5, 'min_dist': 0.1}
                             }
-
-            gpu_umap: bool default=False
-                If True umap will use the rapidsai cuml library to perform the
-                dimensionality reduction. This will lead to a significant speedup
-                in the computation time during model creation. To install rapidsai
-                cuml follow the instructions here: https://docs.rapids.ai/install
-
             hdbscan_params : dict, optional
                 A dictionary containing parameters for the HDBSCAN algorithm.
                 If not provided, default HDBSCAN parameters will be used.
@@ -140,11 +129,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 Example:
                 hdbscan_params = {'min_cluster_size': 10}
 
-            gpu_hdbscan: bool, default=False
-                If True hdbscan will use the rapidsai cuml library to perform the
-                clustering. This will lead to a significant speedup in the computation
-                time during model creation. To install rapidsai cuml follow the
-                instructions here: https://docs.rapids.ai/install
+            use_gpu: bool, default=False
+                If True UMAP and Hdbscan will use the rapidsai cuml library.
+                This will lead to a significant speedup in the computation
+                time during model creation. See: https://docs.rapids.ai/install
     """
 
     def __init__(
@@ -152,26 +140,17 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         random_state: int = 42,
         umap_combine_method: str = "intersection",
         verbose: bool = False,
-        umap_params: dict = None,
-        gpu_umap: bool = None,
-        hdbscan_params: dict = None,
-        gpu_hdbscan: bool = None,
+        umap_params: dict = None,  # type: ignore # noqa
+        hdbscan_params: dict = None,  # type: ignore # noqa
+        use_gpu: bool = False,
         **kwargs,
-    ):  # pylint: disable=R0912
-        if umap_combine_method not in [
-            "intersection",
-            "union",
-            "contrast",
-            "intersection_union_mapper",
-            "ensemble",
-        ]:
-            raise ValueError("umap_combine_method must be valid selection")
-
-        if (gpu_hdbscan or gpu_umap) and umap_combine_method != "ensemble":
+    ):
+        if use_gpu and umap_combine_method != "ensemble":
             raise ValueError("Only ensemble supported for GPU")
 
         self.random_state = random_state
-        seed_everything(self.random_state)
+        if isinstance(random_state, int):
+            seed_everything(self.random_state)
 
         self.umap_combine_method = umap_combine_method
 
@@ -214,14 +193,12 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         else:
             self.umap_params = default_umap_params
 
-        self._gpu_umap = gpu_umap
+        self._use_gpu = use_gpu
 
         if hdbscan_params:
             self.hdbscan_params = hdbscan_params  # pragma: no cover
         else:
             self.hdbscan_params = default_hdbscan_params
-
-        self._gpu_hdbscan = gpu_hdbscan
 
         if verbose:  # pragma: no cover
             logger.setLevel(logging.DEBUG)
@@ -230,35 +207,48 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.setLevel(logging.ERROR)
             self.verbose = False
 
-            # suppress deprecation warnings
-            # see: https://stackoverflow.com/questions/54379418
-            # pylint: disable=W0613
-            def noop(*args, **kargs):
-                pass
-
-            warnings.warn = noop
-
-        if (gpu_umap and not _HAVE_CUMAP) or (gpu_hdbscan and not _HAVE_CUHDBSCAN):
-            logger.info("cuML not installed, using CPU")
-
-        if isinstance(random_state, int):
-            np.random.seed(seed=random_state)
-        else:  # pragma: no cover
-            if not gpu_umap or not _HAVE_CUMAP:
-                logger.info("No random seed passed, running UMAP in Numba, parallel")
-
         self.kwargs = kwargs
 
     def __repr__(self):  # pragma: no cover
         return f"""DenseClus(random_state={self.random_state}
+                            ,verbose={self.verbose}
                             ,umap_combine_method={self.umap_combine_method}
                             ,umap_params={self.umap_params}
-                            ,hdbscan_params={self.hdbscan_params})"""
+                            ,hdbscan_params={self.hdbscan_params}
+                            ,use_gpu = {self._use_gpu}
+                            )"""
 
     def __str__(self):  # pragma: no cover
         return f"""DenseClus object (random_state={self.random_state}
+                                    ,verbose={self.verbose}
                                     ,umap_combine_method={self.umap_combine_method}
-                                    ,verbose={self.verbose})"""
+                                    ,umap_params={self.umap_params}
+                                    ,hdbscan_params={self.hdbscan_params}
+                                    ,use_gpu = {self._use_gpu})"""
+
+    @property
+    def umap_combine_method(self):
+        """Getter for umap combine"""
+        return self._umap_combine_method
+
+    @umap_combine_method.setter
+    def umap_combine_method(self, value):
+        """Setter for umap combine"""
+        if value not in VALID_UMAP_COMBINE_METHODS:
+            raise ValueError(f"Invalid umap_combine_method: {value}")
+        self._umap_combine_method = value
+
+    @property
+    def random_state(self):
+        """Getter for random state"""
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, value):
+        """Setter for random state"""
+        if value is not None and not isinstance(value, int):
+            raise ValueError("random_state must be an integer or None")
+        self._random_state = value
 
     def fit(self, df: pd.DataFrame) -> None:
         """Fits the UMAP and HDBSCAN models to the provided data.
@@ -284,10 +274,10 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         self.numerical_ = extract_numerical(df, **self.kwargs)
 
         logger.info("Fitting categorical UMAP")
-        self._fit_categorical()
+        self.__fit_categorical()
 
         logger.info("Fitting numerical UMAP")
-        self._fit_numerical()
+        self.__fit_numerical()
 
         logger.info("Mapping/Combining Embeddings")
         if self.umap_combine_method != "ensemble":
@@ -307,7 +297,11 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         Returns:
             the fitted UMAP
         """
-        if use_gpu and _HAVE_CUHDBSCAN:
+        if random_state is None:
+            logger.info("No random seed passed, running UMAP in Numba, parallel")
+
+        if use_gpu:
+            # pylint: disable=E0601
             logger.info("Fitting UMAP using GPU")
             return cuUMAP(
                 verbose=False,
@@ -319,23 +313,26 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             random_state=random_state,
             n_jobs=1 if random_state is not None else -1,
             verbose=False,
+            low_memory=True,
             **parameters,
         ).fit(data)
 
-    def _fit_numerical(self) -> None:
+    def __fit_numerical(self) -> None:
         """
         Fit a UMAP based on numerical data
 
         Returns:
             None
         """
+        if self._use_gpu is False:
+            logger.info("cuML not installed, using CPU")
         try:
             logger.info("Fitting UMAP for Numerical data")
 
             numerical_umap = self._fit_umap(
                 data=self.numerical_,
                 parameters=self.umap_params["numerical"],
-                use_gpu=self._gpu_umap,
+                use_gpu=self._use_gpu,
                 random_state=self.random_state,
             )
 
@@ -346,20 +343,23 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             logger.error("Failed to fit numerical UMAP: %s", str(e))
             raise
 
-    def _fit_categorical(self) -> None:
+    def __fit_categorical(self) -> None:
         """
         Fit a UMAP based on categorical data
 
         Returns:
             None
         """
+        if self._use_gpu is False:
+            logger.info("cuML not installed, using CPU")
+
         try:
             logger.info("Fitting UMAP for Categorical data")
 
             categorical_umap = self._fit_umap(
                 data=self.categorical_,
                 parameters=self.umap_params["categorical"],
-                use_gpu=self._gpu_umap,
+                use_gpu=self._use_gpu,
                 random_state=self.random_state,
             )
 
@@ -373,7 +373,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
     def _umap_embeddings(self) -> None:
         """Combines the numerical and categorical UMAP embeddings based on the specified method.
 
-        Supported: 'intersection', 'union', 'contrast', and 'intersection_union_mapper'
+        Supported: 'intersection', 'union', 'contrast','intersection_union_mapper', and 'ensemble'
 
         Returns
         -------
@@ -404,23 +404,29 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
     @staticmethod
     def _fit_single_hdbscan(
-        data: np.array, parameters: dict, prediction_data: bool = False, use_gpu: bool = False
+        data: np.array,
+        parameters: dict,
+        prediction_data: bool = False,
+        use_gpu: bool = False,
     ) -> hdbscan.HDBSCAN:
         """fit HDBSCAN to the provided embeddings
 
-        Args:
+        Parameters
+        ----------
             data (array-like): embeddings to cluster
             parameters (dict): hdbscan parameters
             prediction_data (bool): whether to generate extra cached data for predicting labels or membership vectors
             use_gpu (bool): whether to use GPU
 
-        Returns:
+        Returns
+        -------
             cuml.cluster.HDBSCAN/hdbscan.HDBSCAN: fitted HDBSCAN
         """
         logger.info("Fitting HDBSCAN with parameters %s", parameters)
 
-        if use_gpu and _HAVE_CUHDBSCAN:
+        if use_gpu:
             logger.info("Using GPU for HDBSCAN")
+            # pylint: disable=E0601
             return cuHDBSCAN(
                 prediction_data=prediction_data,
                 **parameters,
@@ -450,7 +456,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 data=self.mapper_.embedding_,
                 parameters=self.hdbscan_params,
                 prediction_data=False,
-                use_gpu=self._gpu_hdbscan,
+                use_gpu=self._use_gpu,
             )
 
             self.hdbscan_ = hdb_
@@ -463,25 +469,22 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 data=self.numerical_umap_.embedding_,
                 parameters=self.hdbscan_params,
                 prediction_data=True,
-                use_gpu=self._gpu_hdbscan,
+                use_gpu=self._use_gpu,
             )
             hdb_catergorical_ = self._fit_single_hdbscan(
                 data=self.categorical_umap_.embedding_,
                 parameters=self.hdbscan_params,
                 prediction_data=True,
-                use_gpu=self._gpu_hdbscan,
+                use_gpu=self._use_gpu,
             )
             self.hdbscan_ = {"hdb_numerical": hdb_numerical_, "hdb_categorical": hdb_catergorical_}
 
             # combine labels and probabilities for points
-
-            # explict cast to np.array because labels can be series or np array
-            # series index mismatch will cause error
             predictions = self.combine_labels_and_probabilities(
-                np.array(hdb_numerical_.labels_),
-                np.array(hdb_numerical_.probabilities_),
-                np.array(hdb_catergorical_.labels_),
-                np.array(hdb_catergorical_.probabilities_),
+                hdb_numerical_.labels_,
+                hdb_numerical_.probabilities_,
+                hdb_catergorical_.labels_,
+                hdb_catergorical_.probabilities_,
             )
 
             self.labels_ = predictions[:, 0]
@@ -489,108 +492,40 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
         logger.info("HDBSCAN fit")
 
-    def score(self) -> np.array:
-        """Returns the cluster assigned to each row.
-
-        This is a wrapper function for HDBSCAN. It outputs the cluster labels
-        that HDBSCAN converged on.
-
-        Parameters
-        ----------
-        None : None
-
-        Returns
-        -------
-        labels : np.array
-        """
-        return self.labels_
-
-    def predict(self, df_new: pd.DataFrame) -> np.array:
-        """
-        Generate predictions on new data points for method 'ensemble'.
-        Will use a weighted vote to pick the most representative cluster from two embeddings.
-
-        Parameters
-        ----------
-        df_new : pd.DataFrame
-            The new data for which to generate predictions.
-            This should be a DataFrame with the same structure as the one used in the fit method.
-
-        Returns
-        -------
-        labels : np.array
-            The predicted cluster labels for each row in df_new.
-         probabilities : np.array
-            The  probabilities of the predictions for each row in df_new.
-        """
-        if self.umap_combine_method != "ensemble":
-            raise ValueError('predict is only supported for method "ensemble"')
-
-        numerical_values = extract_numerical(df_new, **self.kwargs)
-        categorical_values = extract_categorical(df_new, **self.kwargs)
-
-        # transform with umaps
-        numerical_transform = self.numerical_umap_.transform(numerical_values)
-        try:
-            categorical_transform = self.categorical_umap_.transform(categorical_values)
-        except ValueError as e:
-            logger.error("Failed to transform categorical values: %s", str(e))
-            raise ValueError(
-                "Failed to transform categorical values",
-                "This is most likely due to a lack of all categories in the data",
-            ) from e  # pylint: disable=W0707
-
-        # approximate predict
-        numerical_labels, numerical_probabilities = hdbscan.approximate_predict(
-            self.hdbscan_["hdb_numerical"],
-            numerical_transform,
-        )
-        categorical_labels, categorical_probabilities = hdbscan.approximate_predict(
-            self.hdbscan_["hdb_categorical"],
-            categorical_transform,
-        )
-
-        # vote on cluster assignment
-
-        # explict cast to np.array because labels can be series or np array
-        # series index mismatch will cause error
-        predictions = self.combine_labels_and_probabilities(
-            np.array(numerical_labels),
-            np.array(numerical_probabilities),
-            np.array(categorical_labels),
-            np.array(categorical_probabilities),
-        )
-
-        return predictions
-
     @staticmethod
     def combine_labels_and_probabilities(
-        numerical_labels: np.array,
-        numerical_probabilities: np.array,
-        categorical_labels: np.array,
-        categorical_probabilities: np.array,
-    ) -> np.array:
+        numerical_labels: Union[pd.Series, np.ndarray],
+        numerical_probabilities: Union[pd.Series, np.ndarray],
+        categorical_labels: Union[pd.Series, np.ndarray],
+        categorical_probabilities: Union[pd.Series, np.ndarray],
+    ) -> np.ndarray:
         """
-         Combine labels and probabilities from two HDBSCAN models.
+        Combine labels and probabilities from two HDBSCAN models.
 
-         Parameters
-         ----------
-         numerical_labels : np.ndarray
-             Labels from the numerical HDBSCAN model.
-         numerical_probabilities : np.ndarray
-             Probabilities from the numerical HDBSCAN model.
-         categorical_labels : np.ndarray
-             Labels from the categorical HDBSCAN model.
-         categorical_probabilities : np.ndarray
-             Probabilities from the categorical HDBSCAN model.
+        Parameters
+        ----------
+        numerical_labels : Union[pd.Series, np.ndarray]
+            Labels from the numerical HDBSCAN model.
+        numerical_probabilities : Union[pd.Series, np.ndarray]
+            Probabilities from the numerical HDBSCAN model.
+        categorical_labels : Union[pd.Series, np.ndarray]
+            Labels from the categorical HDBSCAN model.
+        categorical_probabilities : Union[pd.Series, np.ndarray]
+            Probabilities from the categorical HDBSCAN model.
 
-         Returns
-         -------
-         labels : np.ndarray
-             Combined labels.
-         probabilities : np.ndarray
-        Combined probabilities.
+        Returns
+        -------
+        labels : np.ndarray
+            Combined labels
+        probabilities : np.ndarray
+            Combined probabilities
         """
+        # explicit cast to np.array because labels can be series or np array
+        numerical_labels = np.array(numerical_labels)
+        numerical_probabilities = np.array(numerical_probabilities)
+        categorical_labels = np.array(categorical_labels)
+        categorical_probabilities = np.array(categorical_probabilities)
+
         labels = np.where(
             numerical_labels == categorical_labels,
             numerical_labels,
@@ -610,3 +545,82 @@ class DenseClus(BaseEstimator, ClassifierMixin):
             ),
         )
         return np.stack((labels, probabilities), axis=-1)
+
+    def predict(self, df_new: pd.DataFrame) -> np.ndarray:
+        """
+        Predict the labels and probabilities for the new data.
+
+        Parameters
+        ----------
+        df_new : pd.DataFrame
+            The new data for which the labels and probabilities are to be predicted.
+
+        Returns
+        -------
+        predictions : np.ndarray
+            The predicted labels and probabilities for the new data.
+        """
+        if self.umap_combine_method != "ensemble":
+            raise ValueError('predict is only supported for method "ensemble"')
+
+        numerical_values = extract_numerical(df_new, **self.kwargs)
+        categorical_values = extract_categorical(df_new, **self.kwargs)
+
+        # transform with umaps
+        numerical_transform = self.numerical_umap_.transform(numerical_values)
+        try:
+            categorical_transform = self.categorical_umap_.transform(categorical_values)
+        except ValueError as e:
+            logger.error("Failed to transform categorical values: %s", str(e))
+            raise ValueError(
+                "Failed to transform categorical values",
+                "This is most likely due to a lack of all categories in the data",
+            ) from e  # pylint: disable=W0707
+
+        numerical_labels, numerical_probabilities = hdbscan.approximate_predict(
+            self.hdbscan_["hdb_numerical"],
+            numerical_transform,
+        )
+        categorical_labels, categorical_probabilities = hdbscan.approximate_predict(
+            self.hdbscan_["hdb_categorical"],
+            categorical_transform,
+        )
+        predictions = self.combine_labels_and_probabilities(
+            numerical_labels,
+            numerical_probabilities,
+            categorical_labels,
+            categorical_probabilities,
+        )
+        return predictions
+
+    def evaluate(self) -> np.array:
+        """Evaluates the cluster and returns the cluster assigned to each row.
+
+         This is a wrapper function for HDBSCAN. It outputs the cluster labels
+         that HDBSCAN converged on.
+
+         Parameters
+         ----------
+         None : None
+
+        Returns
+        -------
+        labels : np.array
+            The cluster labels assigned to each row.
+        """
+        labels = self.labels_
+        clustered = labels >= 0
+
+        if isinstance(self.hdbscan_, dict) or self.umap_combine_method == "ensemble":
+            print(f"DBCV score {self.hdbscan_['hdb_numerical'].relative_validity_}")
+            print(f"DBCV score {self.hdbscan_['hdb_categorical'].relative_validity_}")
+            embedding_len = self.numerical_umap_.embedding_.shape[0]
+            coverage = np.sum(clustered) / embedding_len
+            print(f"Coverage {coverage}")
+            return labels
+
+        print(f"DBCV score {self.hdbscan_.relative_validity_}")
+        embedding_len = self.mapper_.embedding_.shape[0]
+        coverage = np.sum(clustered) / embedding_len
+        print(f"Coverage {coverage}")
+        return labels
