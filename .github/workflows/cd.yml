@@ -1,10 +1,13 @@
 name: CD
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
+ push:
+   branches:
+     - main
+ pull_request:
+   types: [closed]
+   branches:
+     - main
 
 jobs:
   build-n-publish:

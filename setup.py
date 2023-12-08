@@ -28,7 +28,7 @@ setuptools.setup(
     description=meta["__description__"],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    # url=meta["__url__"],
+    url="https://github.com/awslabs/amazon-denseclus",
     packages=setuptools.find_packages(include=["denseclus", "denseclus.*"]),
     classifiers=[
         "Programming Language :: Python :: 3",
