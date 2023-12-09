@@ -21,7 +21,7 @@ Usage:
 
 import logging
 import warnings
-from importlib.util import find_spec
+
 from typing import Union
 
 import hdbscan
@@ -35,10 +35,12 @@ from .numerical import extract_numerical
 from .utils import seed_everything
 
 
-if find_spec("cuml"):
+try:
     from cuml.cluster import HDBSCAN as cuHDBSCAN  # pylint: disable=E0611, E0401
     from cuml.manifold.umap import UMAP as cuUMAP  # pylint: disable=E0611, E0401
-
+except ImportError:
+    cuHDBSCAN = None
+    cuUMAP = None
 
 logger = logging.getLogger("denseclus")
 logger.setLevel(logging.ERROR)
