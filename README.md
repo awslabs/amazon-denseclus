@@ -2,7 +2,7 @@
 # Amazon DenseClus
 
 <p align="left">
-<a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml/badge.svg"></a>
+<a href="https://github.com/awslabs/amazon-denseclus/actions/workflows/tests.yml"><img alt="build" src="https://github.com/awslabs/amazon-denseclus/actions/workflows/cd.yml/badge.svg"></a>
 <a><img alt="total download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=total&units=international_system&left_color=black&right_color=green&left_text=Total Downloads"></a>
 <a><img alt="month download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=month&units=international_system&left_color=black&right_color=green&left_text=Monthly Downloads"></a>
 <a><img alt="weekly download" src="https://static.pepy.tech/personalized-badge/amazon-denseclus?period=week&units=international_system&left_color=black&right_color=green&left_text=Weekly Downloads"></a>
@@ -38,7 +38,7 @@ df = make_dataframe()
 clf = DenseClus(df)
 clf.fit(df)
 
-scores = clf.score()
+scores = clf.evaluate()
 print(scores[0:10])
 ```
 
@@ -47,10 +47,10 @@ print(scores[0:10])
 
 ### Prediction
 
-DenseClus uses a `fit_predict` method with the original fitted dataframe and the new one.
+DenseClus uses a `predict` method when `umap_combine_method` is set to `ensemble`.
 Results are return in 2d array with the first part being the labels and the second part the probabilities.
 
-```
+```python
 from denseclus import DenseClus
 from denseclus.utils import make_dataframe
 
@@ -59,10 +59,10 @@ RANDOM_STATE = 10
 df = make_dataframe(random_state=RANDOM_STATE)
 train = df.sample(frac=0.8, random_state=RANDOM_STATE)
 test = df.drop(train.index)
-clf = DenseClus(random_state=RANDOM_STATE)
+clf = DenseClus(random_state=RANDOM_STATE, umap_combine_method='ensemble')
 clf.fit(train)
 
-predictions = clf.fit_predict(train, test)
+predictions = clf.predict(test)
 print(predictions) # labels, probabilities
 ```
 
@@ -74,6 +74,21 @@ For a slower but more **stable** results select `intersection_union_mapper` to c
 ```python
 clf = DenseClus(
     umap_combine_method="intersection_union_mapper",
+)
+```
+
+### To Use with GPU with Ensemble
+
+To use with gpu first have [rapids installed](https://docs.rapids.ai/install#selector).
+You can do this as setup by providing cuda verision.
+`pip install denseclus[gpu-cu12]`
+
+Then to run:
+
+```python
+clf = DenseClus(
+    umap_combine_method="ensemble",
+    use_gpu=True
 )
 ```
 

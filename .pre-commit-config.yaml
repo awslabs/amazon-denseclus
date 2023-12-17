@@ -11,6 +11,9 @@ repos:
       - id: requirements-txt-fixer
       - id: detect-aws-credentials
         args: [--allow-missing-credentials]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-case-conflict
   - repo: https://github.com/psf/black
     # workaround for black
     # see: https://github.com/psf/black/issues/2493#issuecomment-1081987650
@@ -34,7 +37,7 @@ repos:
     hooks:
       - id: setup-cfg-fmt
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+    rev: v1.7.1
     hooks:
       - id: mypy
         exclude: ^testing/resources/
@@ -44,7 +47,7 @@ repos:
       - id: python-bandit-vulnerability-check
         args: [--skip, "B101", --recursive, denseclus]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -64,7 +67,7 @@ repos:
     hooks:
       - id: pyupgrade
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
+    rev: 1.7.1
     hooks:
       - id: nbqa-pyupgrade
         args: ["--py37-plus"]

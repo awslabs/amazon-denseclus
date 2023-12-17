@@ -11,7 +11,7 @@ from denseclus.utils import make_dataframe
 
 
 N_COMPONENTS = 3
-DF_LEN = 5
+DF_LEN = 100
 
 
 @pytest.fixture(scope="module")
@@ -27,17 +27,16 @@ def df():
 
 
 @pytest.fixture(scope="module")
-def fitted_clf():
-    clf = DenseClus()
-    df_small = make_dataframe(n_samples=100)
-    clf.fit(df_small)
+def fitted_clf(df):
+    clf = DenseClus(umap_combine_method="ensemble")
+    clf.fit(df)
     return clf
 
 
 @pytest.fixture(scope="module")
-def fitted_predictions(default_clf, df, df_len):
-    preds = default_clf.fit_predict(df, df.tail(df_len))
-    return preds
+def fitted_predictions(fitted_clf, df, df_len):
+    predictions = fitted_clf.predict(df.tail(df_len))
+    return predictions
 
 
 @pytest.fixture(scope="module")
