@@ -612,8 +612,8 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         clustered = labels >= 0
 
         if isinstance(self.hdbscan_, dict) or self.umap_combine_method == "ensemble":
-            print(f"DBCV score {self.hdbscan_['hdb_numerical'].relative_validity_}")
-            print(f"DBCV score {self.hdbscan_['hdb_categorical'].relative_validity_}")
+            print(f"DBCV numerical score {self.hdbscan_['hdb_numerical'].relative_validity_}")
+            print(f"DBCV categorical score {self.hdbscan_['hdb_categorical'].relative_validity_}")
             embedding_len = self.numerical_umap_.embedding_.shape[0]
             coverage = np.sum(clustered) / embedding_len
             print(f"Coverage {coverage}")
