@@ -593,7 +593,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         )
         return predictions
 
-    def evaluate(self) -> np.array:
+    def evaluate(self, log_dbcv=False) -> np.array:
         """Evaluates the cluster and returns the cluster assigned to each row.
 
          This is a wrapper function for HDBSCAN. It outputs the cluster labels
@@ -601,7 +601,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
          Parameters
          ----------
-         None : None
+         log_dbcv (bool) : Whether to log DBCV scores. Defaults to False
 
         Returns
         -------
@@ -612,14 +612,18 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         clustered = labels >= 0
 
         if isinstance(self.hdbscan_, dict) or self.umap_combine_method == "ensemble":
-            print(f"DBCV numerical score {self.hdbscan_['hdb_numerical'].relative_validity_}")
-            print(f"DBCV categorical score {self.hdbscan_['hdb_categorical'].relative_validity_}")
+            if log_dbcv:
+                print(f"DBCV numerical score {self.hdbscan_['hdb_numerical'].relative_validity_}")
+                print(
+                    f"DBCV categorical score {self.hdbscan_['hdb_categorical'].relative_validity_}"
+                )
             embedding_len = self.numerical_umap_.embedding_.shape[0]
             coverage = np.sum(clustered) / embedding_len
             print(f"Coverage {coverage}")
             return labels
 
-        print(f"DBCV score {self.hdbscan_.relative_validity_}")
+        if log_dbcv:
+            print(f"DBCV score {self.hdbscan_.relative_validity_}")
         embedding_len = self.mapper_.embedding_.shape[0]
         coverage = np.sum(clustered) / embedding_len
         print(f"Coverage {coverage}")
