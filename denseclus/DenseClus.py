@@ -18,7 +18,6 @@ Usage:
     clusters = dense_clus.score()
 """
 
-
 import logging
 import warnings
 from importlib.util import find_spec
@@ -29,6 +28,7 @@ import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.metrics import calinski_harabasz_score
 
 from .categorical import extract_categorical
 from .numerical import extract_numerical
@@ -617,14 +617,28 @@ class DenseClus(BaseEstimator, ClassifierMixin):
                 print(
                     f"DBCV categorical score {self.hdbscan_['hdb_categorical'].relative_validity_}"
                 )
-            embedding_len = self.numerical_umap_.embedding_.shape[0]
+
+            embeddings = self.numerical_umap_.embedding_
+            embedding_len = embeddings.shape[0]
+
             coverage = np.sum(clustered) / embedding_len
             print(f"Coverage {coverage}")
+
+            ch_score = calinski_harabasz_score(embeddings, labels)
+            print(f"Calinski-Harabasz Score: {ch_score}")
+
             return labels
 
         if log_dbcv:
             print(f"DBCV score {self.hdbscan_.relative_validity_}")
-        embedding_len = self.mapper_.embedding_.shape[0]
+
+        embeddings = self.mapper_.embedding_
+        embedding_len = embeddings.shape[0]
+
         coverage = np.sum(clustered) / embedding_len
         print(f"Coverage {coverage}")
+
+        ch_score = calinski_harabasz_score(embeddings, labels)
+        print(f"Calinski-Harabasz Score: {ch_score}")
+
         return labels
