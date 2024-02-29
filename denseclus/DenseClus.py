@@ -18,7 +18,6 @@ Usage:
     clusters = dense_clus.score()
 """
 
-
 import logging
 import warnings
 from importlib.util import find_spec
@@ -29,6 +28,7 @@ import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.metrics import calinski_harabasz_score
 
 from .categorical import extract_categorical
 from .numerical import extract_numerical
@@ -593,7 +593,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         )
         return predictions
 
-    def evaluate(self) -> np.array:
+    def evaluate(self, log_dbcv=False) -> np.array:
         """Evaluates the cluster and returns the cluster assigned to each row.
 
          This is a wrapper function for HDBSCAN. It outputs the cluster labels
@@ -601,7 +601,7 @@ class DenseClus(BaseEstimator, ClassifierMixin):
 
          Parameters
          ----------
-         None : None
+         log_dbcv (bool) : Whether to log DBCV scores. Defaults to False
 
         Returns
         -------
@@ -612,15 +612,33 @@ class DenseClus(BaseEstimator, ClassifierMixin):
         clustered = labels >= 0
 
         if isinstance(self.hdbscan_, dict) or self.umap_combine_method == "ensemble":
-            print(f"DBCV score {self.hdbscan_['hdb_numerical'].relative_validity_}")
-            print(f"DBCV score {self.hdbscan_['hdb_categorical'].relative_validity_}")
-            embedding_len = self.numerical_umap_.embedding_.shape[0]
+            if log_dbcv:
+                print(f"DBCV numerical score {self.hdbscan_['hdb_numerical'].relative_validity_}")
+                print(
+                    f"DBCV categorical score {self.hdbscan_['hdb_categorical'].relative_validity_}"
+                )
+
+            embeddings = self.numerical_umap_.embedding_
+            embedding_len = embeddings.shape[0]
+
             coverage = np.sum(clustered) / embedding_len
             print(f"Coverage {coverage}")
+
+            ch_score = calinski_harabasz_score(embeddings, labels)
+            print(f"Calinski-Harabasz Score: {ch_score}")
+
             return labels
 
-        print(f"DBCV score {self.hdbscan_.relative_validity_}")
-        embedding_len = self.mapper_.embedding_.shape[0]
+        if log_dbcv:
+            print(f"DBCV score {self.hdbscan_.relative_validity_}")
+
+        embeddings = self.mapper_.embedding_
+        embedding_len = embeddings.shape[0]
+
         coverage = np.sum(clustered) / embedding_len
         print(f"Coverage {coverage}")
+
+        ch_score = calinski_harabasz_score(embeddings, labels)
+        print(f"Calinski-Harabasz Score: {ch_score}")
+
         return labels
