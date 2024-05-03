@@ -81,7 +81,7 @@ clf = DenseClus(
 
 To use with gpu first have [rapids installed](https://docs.rapids.ai/install#selector).
 You can do this as setup by providing cuda verision.
-`pip install denseclus[gpu-cu12]`
+`pip install amazon-denseclus[gpu-cu12]`
 
 Then to run:
 
