@@ -1,5 +1,5 @@
 black==24.2.0
-coverage==7.4.3
+coverage==7.5.0
 mypy==1.8.0
 nbqa==1.7.1
 pre-commit==3.6.2
